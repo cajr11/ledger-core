@@ -7,6 +7,6 @@ export class HealthController {
 
   @Get('/')
   health() {
-    this.healthService.checkHealth();
+    return this.healthService.checkHealth();
   }
 }
