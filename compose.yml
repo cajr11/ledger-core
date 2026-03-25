@@ -1,0 +1,16 @@
+services:
+  web:
+    container_name: ledger-core-web
+    build:
+      context: ./web
+    depends_on:
+      api:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      API_ENDPOINT: http://api:3000
+    ports:
+      - 3001:3001
+    volumes:
+      - ./web:/usr/local/ledger-core/web
