@@ -22,6 +22,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     env_file:
       - .env
     environment:
@@ -56,5 +58,19 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    container_name: ledger-core-redis
+    image: redis:8.6.2-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - ledger-core-redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
 volumes:
   ledger-core-db-data:
+  ledger-core-redis-data:
