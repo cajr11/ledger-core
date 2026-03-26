@@ -129,7 +129,7 @@ services:
       - ledger-core-tigerbeetle-data:/data
     healthcheck:
       # Checks if port 3002 is accepting connections
-      test: ["CMD-SHELL", "nc -z localhost 3002 || exit 1"]
+      test: ["CMD-SHELL", "nc -z 0.0.0.0:3002 || exit 1"]
       interval: 5s
       timeout: 3s
       retries: 5
