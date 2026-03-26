@@ -23,6 +23,9 @@ importers:
       rxjs:
         specifier: ^7.8.1
         version: 7.8.2
+      tigerbeetle-node:
+        specifier: 0.16.78
+        version: 0.16.78
     devDependencies:
       '@eslint/eslintrc':
         specifier: ^3.2.0
@@ -2692,6 +2695,10 @@ packages:
   test-exclude@6.0.0:
     resolution: {integrity: sha512-cAGWPIyOHU6zlmg88jwm7VRyXnMN7iV68OGAbYDk/Mh/xC/pzVPlQtY6ngoIH/5/tciuhGfvESU8GrHrcxD56w==}
     engines: {node: '>=8'}
+
+  tigerbeetle-node@0.16.78:
+    resolution: {integrity: sha512-Afl/eLAR1RByTA3q9Q61CUqVGI1Zq836IJ+O8OD2oTLmiqTUnlqfNmRk0wRCEwN9nX/SNfXDFX0ea0HfCZFDGA==}
+    engines: {node: '>=18.0.0'}
 
   tinyglobby@0.2.15:
     resolution: {integrity: sha512-j2Zq4NyQYG5XMST4cbs02Ak8iJUdxRM0XI5QyxXuZOzKOINmWurp3smXu3y5wDcJrptwpSjgXHzIQxR0omXljQ==}
@@ -5927,6 +5934,8 @@ snapshots:
       '@istanbuljs/schema': 0.1.3
       glob: 7.2.3
       minimatch: 3.1.5
+
+  tigerbeetle-node@0.16.78: {}
 
   tinyglobby@0.2.15:
     dependencies:
