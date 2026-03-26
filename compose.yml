@@ -25,10 +25,13 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      tigerbeetle:
+        condition: service_healthy
     env_file:
       - .env
     environment:
       DB_HOST: db
+      TB_ADDRESS: tigerbeetle:3002
     ports:
       - "3000:3000"
     volumes:
@@ -72,6 +75,67 @@ services:
       timeout: 5s
       retries: 3
 
+  # Creates and formats the tigerbeetle data file. If already exists, skips this step
+  tigerbeetle-init:
+    image: ghcr.io/tigerbeetle/tigerbeetle:0.16.78
+    # Override entrypoint to use 'sh' for the logic check
+    entrypoint: ["sh", "-c"]
+    command:
+      - |
+        if [ -f /data/0_0.tigerbeetle ]; then
+          echo 'Data already formatted'
+        else
+          /tigerbeetle format --cluster=0 --replica=0 --replica-count=1 /data/0_0.tigerbeetle
+        fi
+    volumes:
+      - ledger-core-tigerbeetle-data:/data
+    cap_add:
+      - IPC_LOCK
+    # seccomp=unconfined disables syscall filtering so TigerBeetle can use io_uring.
+    # This is acceptable for local development only.
+    # io_uring is a high-performance Linux I/O interface that batches disk read/write
+    # operations instead of processing them one at a time. TigerBeetle requires it
+    # for efficient data file access. Docker blocks it by default due to historical
+    # security vulnerabilities in the io_uring subsystem.
+    # PRODUCTION: Replace with a custom seccomp profile that only allows the syscalls TigerBeetle needs.
+    # See: https://docs.docker.com/engine/security/seccomp/
+    security_opt:
+      - seccomp=unconfined
+
+  tigerbeetle:
+    container_name: ledger-core-tigerbeetle
+    image: ghcr.io/tigerbeetle/tigerbeetle:0.16.78
+    command: start --addresses=0.0.0.0:3002 /data/0_0.tigerbeetle
+    depends_on:
+      tigerbeetle-init:
+        condition: service_completed_successfully
+    ports:
+      - "3002:3002"
+    cap_add:
+      # Required for memory locking (Inter-Process Communication Lock)
+      - IPC_LOCK
+      # seccomp=unconfined disables syscall filtering so TigerBeetle can use io_uring.
+    # This is acceptable for local development only.
+    # io_uring is a high-performance Linux I/O interface that batches disk read/write
+    # operations instead of processing them one at a time. TigerBeetle requires it
+    # for efficient data file access. Docker blocks it by default due to historical
+    # security vulnerabilities in the io_uring subsystem.
+    # PRODUCTION: Replace with a custom seccomp profile that only allows the syscalls TigerBeetle needs.
+    # See: https://docs.docker.com/engine/security/seccomp/
+    security_opt:
+      - seccomp=unconfined
+    volumes:
+      # Mount the local 'data' directory to the container's '/data' directory
+      - ledger-core-tigerbeetle-data:/data
+    healthcheck:
+      # Checks if port 3002 is accepting connections
+      test: ["CMD-SHELL", "nc -z localhost 3002 || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
+
 volumes:
   ledger-core-db-data:
   ledger-core-redis-data:
+  ledger-core-tigerbeetle-data:
