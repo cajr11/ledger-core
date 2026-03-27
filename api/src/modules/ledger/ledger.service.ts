@@ -1,5 +1,6 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { createClient, type Client } from 'tigerbeetle-node';
+import { AccountType, Ledger } from 'src/types';
+import { createClient, id, type Client } from 'tigerbeetle-node';
 
 @Injectable()
 export class LedgerService implements OnModuleInit, OnModuleDestroy {
@@ -14,5 +15,71 @@ export class LedgerService implements OnModuleInit, OnModuleDestroy {
 
   async onModuleDestroy() {
     this.tbClient.destroy();
+  }
+
+  async createAccount({ ledger, code }: { ledger: Ledger; code: AccountType }) {
+    const account = {
+      id: id(), // TigerBeetle time-based ID.
+      debits_pending: 0n,
+      debits_posted: 0n,
+      credits_pending: 0n,
+      credits_posted: 0n,
+      user_data_128: 0n,
+      user_data_64: 0n,
+      user_data_32: 0,
+      reserved: 0,
+      ledger: ledger,
+      code: code,
+      flags: 0,
+      timestamp: 0n,
+    };
+
+    try {
+      const results = await this.tbClient.createAccounts([account]);
+      console.log(results);
+      return results;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async createTransfer({
+    debitAccountId,
+    creditAccountId,
+    amount,
+    ledger,
+    code,
+  }: {
+    debitAccountId: bigint;
+    creditAccountId: bigint;
+    amount: bigint;
+    ledger: Ledger;
+    code: AccountType;
+  }) {
+    const transfer = [
+      {
+        id: id(),
+        debit_account_id: debitAccountId,
+        credit_account_id: creditAccountId,
+        amount: amount, // 10 cents, using the smallest unit and avoiding floating point numbers
+        pending_id: 0n,
+        user_data_128: 0n,
+        user_data_64: 0n,
+        user_data_32: 0,
+        timeout: 0,
+        ledger: ledger,
+        code: code,
+        flags: 0,
+        timestamp: 0n,
+      },
+    ];
+
+    try {
+      const createdTransfers = await this.tbClient.createTransfers(transfer);
+      console.log(createdTransfers);
+      return createdTransfers;
+    } catch (error) {
+      console.error(error);
+    }
   }
 }
