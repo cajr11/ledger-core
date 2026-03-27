@@ -1,16 +1,22 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { error } from 'console';
-import { AccountType, Ledger } from 'src/types';
-import { createClient, id, type Client } from 'tigerbeetle-node';
+import { lookup } from 'dns/promises';
+import { AccountType, Ledger, TransferType } from 'src/types';
+import { AccountFlags, createClient, id, type Client } from 'tigerbeetle-node';
 
 @Injectable()
 export class LedgerService implements OnModuleInit, OnModuleDestroy {
   private tbClient: Client;
 
   async onModuleInit() {
+    const host = process.env.TB_HOST || 'localhost';
+    const port = process.env.TB_PORT || '3002';
+
+    // Resolve hostname to IP (TigerBeetle client only accepts IPs)
+    const { address } = await lookup(host);
+
     this.tbClient = createClient({
       cluster_id: 0n,
-      replica_addresses: [process.env.TB_ADDRESS || '3002'],
+      replica_addresses: [`${address}:${port}`],
     });
   }
 
@@ -19,8 +25,10 @@ export class LedgerService implements OnModuleInit, OnModuleDestroy {
   }
 
   async createAccount({ ledger, code }: { ledger: Ledger; code: AccountType }) {
+    const accountId = id(); // TigerBeetle time-based ID.
+
     const account = {
-      id: id(), // TigerBeetle time-based ID.
+      id: accountId,
       debits_pending: 0n,
       debits_posted: 0n,
       credits_pending: 0n,
@@ -31,14 +39,22 @@ export class LedgerService implements OnModuleInit, OnModuleDestroy {
       reserved: 0,
       ledger: ledger,
       code: code,
-      flags: 0,
+      flags:
+        code === AccountType.USER_WALLET
+          ? AccountFlags.debits_must_not_exceed_credits
+          : 0,
       timestamp: 0n,
     };
 
     try {
       const results = await this.tbClient.createAccounts([account]);
-      console.log(results);
-      return results;
+
+      if (results.length > 0)
+        throw new Error(
+          `Account creation failed with status code ${results[0].result}`,
+        );
+
+      return accountId;
     } catch (error) {
       console.error(error);
     }
@@ -55,11 +71,13 @@ export class LedgerService implements OnModuleInit, OnModuleDestroy {
     creditAccountId: bigint;
     amount: bigint;
     ledger: Ledger;
-    code: AccountType;
+    code: TransferType;
   }) {
+    const transferId = id();
+
     const transfer = [
       {
-        id: id(),
+        id: transferId,
         debit_account_id: debitAccountId,
         credit_account_id: creditAccountId,
         amount: amount, // 10 cents, using the smallest unit and avoiding floating point numbers
@@ -76,9 +94,14 @@ export class LedgerService implements OnModuleInit, OnModuleDestroy {
     ];
 
     try {
-      const createdTransfers = await this.tbClient.createTransfers(transfer);
-      console.log(createdTransfers);
-      return createdTransfers;
+      const results = await this.tbClient.createTransfers(transfer);
+
+      if (results.length > 0)
+        throw new Error(
+          `Account creation failed with status code ${results[0].result}`,
+        );
+
+      return transferId;
     } catch (error) {
       console.error(error);
     }
