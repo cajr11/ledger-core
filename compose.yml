@@ -29,9 +29,15 @@ services:
         condition: service_healthy
     env_file:
       - .env
+    # The TigerBeetle Node.js client uses io_uring internally for communication with the server
+    cap_add:
+      - IPC_LOCK
+    security_opt:
+      - seccomp=unconfined
     environment:
-      DB_HOST: db
-      TB_ADDRESS: tigerbeetle:3002
+      DB_HOST: ${DB_HOST}
+      TB_HOST: ${TB_HOST}
+      TB_PORT: ${TB_PORT}
     ports:
       - "3000:3000"
     volumes:
@@ -114,7 +120,7 @@ services:
     cap_add:
       # Required for memory locking (Inter-Process Communication Lock)
       - IPC_LOCK
-      # seccomp=unconfined disables syscall filtering so TigerBeetle can use io_uring.
+    # seccomp=unconfined disables syscall filtering so TigerBeetle can use io_uring.
     # This is acceptable for local development only.
     # io_uring is a high-performance Linux I/O interface that batches disk read/write
     # operations instead of processing them one at a time. TigerBeetle requires it
