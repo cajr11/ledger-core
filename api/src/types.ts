@@ -7,3 +7,9 @@ export enum Ledger {
   GHS = 6,
   NGN = 7,
 }
+
+export enum AccountType {
+  USER_WALLET = 1, // individual user's account
+  INTERNAL_POOL = 2, // system pool for conversions (e.g., USDC pool, MXN pool)
+  FEE_COLLECTION = 3, // where fees accumulate
+}
