@@ -5,7 +5,7 @@ import { HealthService } from './health.service';
 export class HealthController {
   constructor(private readonly healthService: HealthService) {}
 
-  @Get('/')
+  @Get()
   health() {
     return this.healthService.checkHealth();
   }
