@@ -1,4 +1,5 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { error } from 'console';
 import { AccountType, Ledger } from 'src/types';
 import { createClient, id, type Client } from 'tigerbeetle-node';
 
@@ -78,6 +79,27 @@ export class LedgerService implements OnModuleInit, OnModuleDestroy {
       const createdTransfers = await this.tbClient.createTransfers(transfer);
       console.log(createdTransfers);
       return createdTransfers;
+    } catch (error) {
+      console.error(error);
+    }
+  }
+
+  async getAccountBalance(accountId: bigint) {
+    try {
+      const accounts = await this.tbClient.lookupAccounts([accountId]);
+
+      if (!accounts.length) {
+        throw new Error(`No accounts found with id ${accountId}`);
+      }
+      const account = accounts[0];
+
+      return {
+        creditsPosted: account.credits_posted,
+        debitsPosted: account.debits_posted,
+        creditsPending: account.credits_pending,
+        debitsPending: account.debits_pending,
+        balance: account.credits_posted - account.debits_posted, // for liability accounts
+      };
     } catch (error) {
       console.error(error);
     }
