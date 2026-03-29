@@ -145,10 +145,7 @@ export class TransfersService {
         BigInt(userAccount.tigerBeetleAccountId.toFixed(0)),
       );
 
-      return {
-        message: `Funded ${dto.amount} ${dto.currency} to user ${dto.userId}`,
-        balance,
-      };
+      return balance;
     } catch (error) {
       this.logger.error('Funding failure:', error);
       throw error;
