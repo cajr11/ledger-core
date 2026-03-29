@@ -5,11 +5,13 @@ import { HealthModule } from './modules/health/health.module';
 import { LedgerModule } from './modules/ledger/ledger.module';
 import { LedgerService } from './modules/ledger/ledger.service';
 import { ConfigModule } from '@nestjs/config';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
   imports: [
     HealthModule,
     LedgerModule,
+    UsersModule,
     ConfigModule.forRoot({
       envFilePath: '../.env',
       isGlobal: true,
