@@ -1,0 +1,42 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @unique @db.VarChar(255)
+  fullName  String   @map("full_name") @db.VarChar(255)
+  phone     String?  @db.VarChar(50)
+  country   String   @db.VarChar(2)
+  kycStatus String   @default("PENDING") @map("kyc_status") @db.VarChar(20)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  accounts UserAccount[]
+
+  @@map("users")
+}
+
+model UserAccount {
+  id                  String   @id @default(uuid()) @db.Uuid
+  userId              String   @map("user_id") @db.Uuid
+  tigerBeetleAccountId BigInt  @map("tigerbeetle_account_id")
+  currency            String   @db.VarChar(4)
+  accountType         String   @map("account_type") @db.VarChar(20)
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("user_accounts")
+}

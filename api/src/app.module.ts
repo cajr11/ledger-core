@@ -4,9 +4,17 @@ import { AppService } from './app.service';
 import { HealthModule } from './modules/health/health.module';
 import { LedgerModule } from './modules/ledger/ledger.module';
 import { LedgerService } from './modules/ledger/ledger.service';
+import { ConfigModule } from '@nestjs/config';
 
 @Module({
-  imports: [HealthModule, LedgerModule],
+  imports: [
+    HealthModule,
+    LedgerModule,
+    ConfigModule.forRoot({
+      envFilePath: '../.env',
+      isGlobal: true,
+    }),
+  ],
   controllers: [AppController],
   providers: [AppService, LedgerService],
 })
