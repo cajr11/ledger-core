@@ -8,9 +8,10 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { LedgerService } from '../ledger/ledger.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { AccountType } from 'src/types';
+import { AccountBalance, AccountType } from 'src/types';
 import convertCountryToLedger from 'src/common/helpers/convertCountryToLedger.helper';
 import convertCountryToCurrency from 'src/common/helpers/convertCountryToCurrency.helper';
+import { UserAccount } from 'src/generated/prisma/client';
 
 @Injectable()
 export class UsersService {
@@ -79,6 +80,38 @@ export class UsersService {
       });
     } catch {
       throw new NotFoundException(`User with id ${id} not found`);
+    }
+  }
+
+  async getAccounts(userId: string) {
+    try {
+      return await this.prismaService.userAccount.findMany({
+        where: {
+          userId,
+        },
+      });
+    } catch {
+      throw new NotFoundException(`No accounts found for user ${userId}`);
+    }
+  }
+
+  async getBalance(accBalanceId: string) {
+    try {
+      const userAcc: UserAccount =
+        await this.prismaService.userAccount.findUniqueOrThrow({
+          where: {
+            id: accBalanceId,
+          },
+        });
+
+      const accountBalance: AccountBalance =
+        await this.ledgerService.getAccountBalance(
+          userAcc.tigerBeetleAccountId,
+        );
+
+      return accountBalance;
+    } catch (error) {
+      throw new NotFoundException(`Failed to get balance for ${accBalanceId}`);
     }
   }
 }

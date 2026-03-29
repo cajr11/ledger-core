@@ -23,3 +23,11 @@ export enum TransferType {
   FEE = 5, // fee deduction
   REFUND = 6, // reversal of a failed transfer
 }
+
+export type AccountBalance = {
+  creditsPosted: bigint;
+  debitsPosted: bigint;
+  creditsPending: bigint;
+  debitsPending: bigint;
+  balance: bigint;
+};
