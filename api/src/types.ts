@@ -31,3 +31,11 @@ export type AccountBalance = {
   debitsPending: string;
   balance: string;
 };
+
+export enum TransferStatus {
+  INITIATED = 'INITIATED',
+  PROCESSING = 'PROCESSING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  REFUNDED = 'REFUNDED',
+}
