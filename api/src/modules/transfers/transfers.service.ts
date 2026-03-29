@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { LedgerService } from '../ledger/ledger.service';
 import { CreateTransferDto } from './dto/create-transfer.dto';
+import { FundAccountDto } from './dto/fund-account.dto';
 import { Decimal } from '@prisma/client/runtime/client';
 import { Ledger, TransferStatus, TransferType } from 'src/types';
 import { UpdateTransferStatusDto } from './dto/update-transfer-status.dto';
@@ -102,6 +103,54 @@ export class TransfersService {
       return transfer;
     } catch (error) {
       this.logger.error('Transaction Creation Failure:', error);
+      throw error;
+    }
+  }
+
+  async fundAccount(dto: FundAccountDto) {
+    try {
+      const fundingAccount =
+        await this.prismaService.systemAccount.findUnique({
+          where: { currency: dto.currency },
+        });
+
+      if (!fundingAccount) {
+        throw new BadRequestException(
+          `No funding account exists for currency ${dto.currency}`,
+        );
+      }
+
+      const userAccount = await this.prismaService.userAccount.findFirst({
+        where: {
+          userId: dto.userId,
+          currency: dto.currency,
+        },
+      });
+
+      if (!userAccount) {
+        throw new BadRequestException(
+          `User does not have a ${dto.currency} wallet`,
+        );
+      }
+
+      await this.ledgerService.createTransfer({
+        debitAccountId: BigInt(fundingAccount.tigerBeetleAccountId.toFixed(0)),
+        creditAccountId: BigInt(userAccount.tigerBeetleAccountId.toFixed(0)),
+        amount: BigInt(dto.amount),
+        ledger: Ledger[dto.currency as keyof typeof Ledger],
+        code: TransferType.FUNDING,
+      });
+
+      const balance = await this.ledgerService.getAccountBalance(
+        BigInt(userAccount.tigerBeetleAccountId.toFixed(0)),
+      );
+
+      return {
+        message: `Funded ${dto.amount} ${dto.currency} to user ${dto.userId}`,
+        balance,
+      };
+    } catch (error) {
+      this.logger.error('Funding failure:', error);
       throw error;
     }
   }

@@ -2,6 +2,7 @@ import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { TransfersService } from './transfers.service';
 import { CreateTransferDto } from './dto/create-transfer.dto';
+import { FundAccountDto } from './dto/fund-account.dto';
 
 @ApiTags('Transfers')
 @Controller('transfers')
@@ -22,6 +23,14 @@ export class TransfersController {
   })
   create(@Body() dto: CreateTransferDto) {
     return this.transfersService.createTransfer(dto);
+  }
+
+  @Post('fund')
+  @ApiOperation({ summary: 'Fund a user wallet from the system funding account' })
+  @ApiResponse({ status: 201, description: 'Account funded successfully' })
+  @ApiResponse({ status: 400, description: 'No funding account for this currency or user wallet not found' })
+  fund(@Body() dto: FundAccountDto) {
+    return this.transfersService.fundAccount(dto);
   }
 
   @Get(':id')
