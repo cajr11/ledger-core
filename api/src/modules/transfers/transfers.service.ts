@@ -76,6 +76,16 @@ export class TransfersService {
             },
           });
 
+          // record initial status
+          await tx.transferStatusHistory.create({
+            data: {
+              transferId: pgTransfer.id,
+              fromStatus: null,
+              toStatus: TransferStatus.INITIATED,
+              changedBy: 'system',
+            },
+          });
+
           // create transfer in Tiger Beetle
           await this.ledgerService.createTransfer({
             debitAccountId: BigInt(sender.tigerBeetleAccountId.toFixed(0)),
