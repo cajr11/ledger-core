@@ -1,4 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { LedgerService } from '../ledger/ledger.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -8,7 +14,9 @@ import convertCountryToCurrency from 'src/common/helpers/convertCountryToCurrenc
 
 @Injectable()
 export class UsersService {
-  private readonly logger = new Logger(UsersService.name, { timestamp: true });
+  private readonly logger = new Logger(UsersService.name, {
+    timestamp: true,
+  });
   constructor(
     private readonly prismaService: PrismaService,
     private readonly ledgerService: LedgerService,
@@ -56,7 +64,21 @@ export class UsersService {
     } catch (error) {
       this.logger.error('Failed to create user:', error);
 
-      throw error;
+      if (error.code === 'P2002') {
+        throw new ConflictException('A user with this email already exists');
+      }
+
+      throw new InternalServerErrorException('Failed to create user');
+    }
+  }
+
+  async findUser(id: string) {
+    try {
+      return await this.prismaService.user.findUniqueOrThrow({
+        where: { id },
+      });
+    } catch {
+      throw new NotFoundException(`User with id ${id} not found`);
     }
   }
 }
