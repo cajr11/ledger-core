@@ -131,11 +131,11 @@ export class LedgerService implements OnModuleInit, OnModuleDestroy {
       const account = accounts[0];
 
       return {
-        creditsPosted: account.credits_posted,
-        debitsPosted: account.debits_posted,
-        creditsPending: account.credits_pending,
-        debitsPending: account.debits_pending,
-        balance: account.credits_posted - account.debits_posted, // for liability accounts
+        creditsPosted: account.credits_posted.toString(),
+        debitsPosted: account.debits_posted.toString(),
+        creditsPending: account.credits_pending.toString(),
+        debitsPending: account.debits_pending.toString(),
+        balance: (account.credits_posted - account.debits_posted).toString(),
       };
     } catch (error) {
       this.logger.error('FAILED GETTING BALANCE:', error);

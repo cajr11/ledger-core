@@ -12,6 +12,7 @@ import { AccountBalance, AccountType } from 'src/types';
 import convertCountryToLedger from 'src/common/helpers/convertCountryToLedger.helper';
 import convertCountryToCurrency from 'src/common/helpers/convertCountryToCurrency.helper';
 import { UserAccount } from 'src/generated/prisma/client';
+import { Decimal } from '@prisma/client/runtime/client';
 
 @Injectable()
 export class UsersService {
@@ -48,7 +49,7 @@ export class UsersService {
           const pgUserAcc = await tx.userAccount.create({
             data: {
               userId: user.id,
-              tigerBeetleAccountId: tbAccId as bigint,
+              tigerBeetleAccountId: new Decimal(tbAccId.toString()),
               currency: convertCountryToCurrency(user.country),
               accountType: AccountType[AccountType.USER_WALLET],
             },
@@ -90,7 +91,8 @@ export class UsersService {
           userId,
         },
       });
-    } catch {
+    } catch (error) {
+      this.logger.error(`Failed to get balance for ${userId}:`, error);
       throw new NotFoundException(`No accounts found for user ${userId}`);
     }
   }
@@ -106,11 +108,12 @@ export class UsersService {
 
       const accountBalance: AccountBalance =
         await this.ledgerService.getAccountBalance(
-          userAcc.tigerBeetleAccountId,
+          BigInt(userAcc.tigerBeetleAccountId.toFixed(0)),
         );
 
       return accountBalance;
     } catch (error) {
+      this.logger.error(`Failed to get balance for ${accBalanceId}:`, error);
       throw new NotFoundException(`Failed to get balance for ${accBalanceId}`);
     }
   }

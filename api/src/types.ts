@@ -25,9 +25,9 @@ export enum TransferType {
 }
 
 export type AccountBalance = {
-  creditsPosted: bigint;
-  debitsPosted: bigint;
-  creditsPending: bigint;
-  debitsPending: bigint;
-  balance: bigint;
+  creditsPosted: string;
+  debitsPosted: string;
+  creditsPending: string;
+  debitsPending: string;
+  balance: string;
 };
