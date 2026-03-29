@@ -14,12 +14,13 @@ import { TransactionClient } from 'src/generated/prisma/internal/prismaNamespace
 
 @Injectable()
 export class TransfersService {
+  private readonly logger = new Logger(TransfersService.name, {
+    timestamp: true,
+  });
+
   constructor(
     private readonly prismaService: PrismaService,
     private readonly ledgerService: LedgerService,
-    private logger = new Logger(TransfersService.name, {
-      timestamp: true,
-    }),
   ) {}
 
   async createTransfer(dto: CreateTransferDto) {
