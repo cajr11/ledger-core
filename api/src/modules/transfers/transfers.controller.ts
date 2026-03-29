@@ -1,5 +1,5 @@
-import { Body, Controller, Post } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { TransfersService } from './transfers.service';
 import { CreateTransferDto } from './dto/create-transfer.dto';
 
@@ -22,5 +22,23 @@ export class TransfersController {
   })
   create(@Body() dto: CreateTransferDto) {
     return this.transfersService.createTransfer(dto);
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: 'Get a transfer by ID' })
+  @ApiParam({ name: 'id', description: 'Transfer UUID' })
+  @ApiResponse({ status: 200, description: 'Transfer found' })
+  @ApiResponse({ status: 404, description: 'Transfer not found' })
+  findOne(@Param('id') id: string) {
+    return this.transfersService.getTransfer(id);
+  }
+
+  @Get(':id/history')
+  @ApiOperation({ summary: 'Get the full status history of a transfer' })
+  @ApiParam({ name: 'id', description: 'Transfer UUID' })
+  @ApiResponse({ status: 200, description: 'List of status transitions ordered by time' })
+  @ApiResponse({ status: 404, description: 'Transfer not found' })
+  getHistory(@Param('id') id: string) {
+    return this.transfersService.getTransferHistory(id);
   }
 }

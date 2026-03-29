@@ -1,4 +1,9 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { LedgerService } from '../ledger/ledger.service';
 import { CreateTransferDto } from './dto/create-transfer.dto';
@@ -98,6 +103,31 @@ export class TransfersService {
       this.logger.error('Transaction Creation Failure:', error);
       throw error;
     }
+  }
+
+  async getTransfer(id: string) {
+    try {
+      return await this.prismaService.transfer.findUniqueOrThrow({
+        where: { id },
+      });
+    } catch {
+      throw new NotFoundException(`Transfer with id ${id} not found`);
+    }
+  }
+
+  async getTransferHistory(transferId: string) {
+    const transfer = await this.prismaService.transfer.findUnique({
+      where: { id: transferId },
+    });
+
+    if (!transfer) {
+      throw new NotFoundException(`Transfer with id ${transferId} not found`);
+    }
+
+    return await this.prismaService.transferStatusHistory.findMany({
+      where: { transferId },
+      orderBy: { createdAt: 'asc' },
+    });
   }
 
   async updateTransferStatus(
