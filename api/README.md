@@ -37,6 +37,8 @@ DATABASE_URL="postgresql://ledger:somepassword@localhost:5432/ledger_core" pnpm 
 pnpm prisma-generate
 ```
 
+We run this after every migration in oorder to generate new types.
+
 ### Opening Prisma Studio
 
 ```bash
@@ -47,10 +49,10 @@ Replace `ledger:somepassword` with your actual credentials from `.env`.
 
 ## API Endpoints
 
-| Method | Route                    | Description                      |
-|--------|--------------------------|----------------------------------|
-| GET    | /health                  | Health check                     |
-| POST   | /users                   | Create a user + wallet account   |
-| GET    | /users/:id               | Get user by ID                   |
-| GET    | /users/:id/accounts      | Get all accounts for a user      |
-| GET    | /users/account/:id       | Get account balance from TigerBeetle |
+| Method | Route               | Description                          |
+| ------ | ------------------- | ------------------------------------ |
+| GET    | /health             | Health check                         |
+| POST   | /users              | Create a user + wallet account       |
+| GET    | /users/:id          | Get user by ID                       |
+| GET    | /users/:id/accounts | Get all accounts for a user          |
+| GET    | /users/account/:id  | Get account balance from TigerBeetle |
