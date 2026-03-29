@@ -89,15 +89,6 @@ export class TransfersService {
             },
           );
 
-          await tx.transfer.update({
-            where: {
-              id: pgTransfer.id,
-            },
-            data: {
-              status: TransferStatus.COMPLETED,
-            },
-          });
-
           return pgTransfer;
         }
       });
@@ -115,12 +106,17 @@ export class TransfersService {
     currentStatus: TransferStatus,
     dto: UpdateTransferStatusDto,
   ) {
-    return await tx.transferStatusHistory.create({
+    await tx.transferStatusHistory.create({
       data: {
         transferId: transferId,
         fromStatus: currentStatus,
         ...dto,
       },
+    });
+
+    await tx.transfer.update({
+      where: { id: transferId },
+      data: { status: dto.toStatus },
     });
   }
 }
