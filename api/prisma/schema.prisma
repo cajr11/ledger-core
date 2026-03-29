@@ -46,6 +46,16 @@ model UserAccount {
 }
 
 
+model SystemAccount {
+  id                   String   @id @default(uuid()) @db.Uuid
+  tigerBeetleAccountId Decimal  @map("tigerbeetle_account_id") @db.Decimal(39, 0)
+  currency             String   @unique @db.VarChar(4)
+  accountType          String   @map("account_type") @db.VarChar(20)
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  @@map("system_accounts")
+}
+
 model Transfer {
   id              String   @id @default(uuid()) @db.Uuid
   idempotencyKey  String   @unique @map("idempotency_key") @db.VarChar(255)
