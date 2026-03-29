@@ -32,7 +32,7 @@ model User {
 model UserAccount {
   id                  String   @id @default(uuid()) @db.Uuid
   userId              String   @map("user_id") @db.Uuid
-  tigerBeetleAccountId BigInt  @map("tigerbeetle_account_id")
+  tigerBeetleAccountId Decimal @map("tigerbeetle_account_id") @db.Decimal(39, 0)
   currency            String   @db.VarChar(4)
   accountType         String   @map("account_type") @db.VarChar(20)
   createdAt           DateTime @default(now()) @map("created_at")
