@@ -1,4 +1,9 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { lookup } from 'dns/promises';
 import { AccountType, Ledger, TransferType } from 'src/types';
 import { AccountFlags, createClient, id, type Client } from 'tigerbeetle-node';
@@ -6,18 +11,25 @@ import { AccountFlags, createClient, id, type Client } from 'tigerbeetle-node';
 @Injectable()
 export class LedgerService implements OnModuleInit, OnModuleDestroy {
   private tbClient: Client;
+  private readonly logger = new Logger(LedgerService.name, { timestamp: true });
 
   async onModuleInit() {
     const host = process.env.TB_HOST || 'localhost';
     const port = process.env.TB_PORT || '3002';
 
     // Resolve hostname to IP (TigerBeetle client only accepts IPs)
-    const { address } = await lookup(host);
+    try {
+      const { address } = await lookup(host);
 
-    this.tbClient = createClient({
-      cluster_id: 0n,
-      replica_addresses: [`${address}:${port}`],
-    });
+      this.tbClient = createClient({
+        cluster_id: 0n,
+        replica_addresses: [`${address}:${port}`],
+      });
+    } catch (error) {
+      throw new Error(
+        `Cannot resolve TigerBeetle host "${host}" — is the container running?`,
+      );
+    }
   }
 
   async onModuleDestroy() {
@@ -56,7 +68,8 @@ export class LedgerService implements OnModuleInit, OnModuleDestroy {
 
       return accountId;
     } catch (error) {
-      console.error(error);
+      this.logger.error('FAILED ACCOUNT CREATION:', error);
+      throw error;
     }
   }
 
@@ -80,7 +93,7 @@ export class LedgerService implements OnModuleInit, OnModuleDestroy {
         id: transferId,
         debit_account_id: debitAccountId,
         credit_account_id: creditAccountId,
-        amount: amount, // 10 cents, using the smallest unit and avoiding floating point numbers
+        amount: amount, // e.g 10 cents, using the smallest unit and avoiding floating point numbers
         pending_id: 0n,
         user_data_128: 0n,
         user_data_64: 0n,
@@ -98,12 +111,13 @@ export class LedgerService implements OnModuleInit, OnModuleDestroy {
 
       if (results.length > 0)
         throw new Error(
-          `Account creation failed with status code ${results[0].result}`,
+          `Transfer failed with status code ${results[0].result}`,
         );
 
       return transferId;
     } catch (error) {
-      console.error(error);
+      this.logger.error('FAILED TRANSFER TB:', error);
+      throw error;
     }
   }
 
@@ -124,7 +138,8 @@ export class LedgerService implements OnModuleInit, OnModuleDestroy {
         balance: account.credits_posted - account.debits_posted, // for liability accounts
       };
     } catch (error) {
-      console.error(error);
+      this.logger.error('FAILED GETTING BALANCE:', error);
+      throw error;
     }
   }
 }
