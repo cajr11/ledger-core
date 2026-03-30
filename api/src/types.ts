@@ -33,9 +33,14 @@ export type AccountBalance = {
 };
 
 export enum TransferStatus {
-  INITIATED = 'INITIATED',
-  PROCESSING = 'PROCESSING',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED',
-  REFUNDED = 'REFUNDED',
+  INITIATED = 'INITIATED', // transfer created, waiting to start
+  COLLECTING = 'COLLECTING', // waiting for funds from sender
+  FUNDS_RECEIVED = 'FUNDS_RECEIVED', // provider confirmed funds arrived
+  CONVERTING = 'CONVERTING', // currency conversion in progress
+  SENDING = 'SENDING', // sending to destination
+  COMPLETED = 'COMPLETED', // done, funds delivered
+  FAILED = 'FAILED', // something went wrong
+  REFUNDING = 'REFUNDING', // refund in progress
+  REFUNDED = 'REFUNDED', // refund complete
+  CANCELLED = 'CANCELLED', // cancelled before processing
 }
