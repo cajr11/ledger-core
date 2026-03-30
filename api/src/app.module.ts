@@ -6,6 +6,7 @@ import { LedgerModule } from './modules/ledger/ledger.module';
 import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from './modules/users/users.module';
 import { TransfersModule } from './modules/transfers/transfers.module';
+import { WebhooksModule } from './modules/webhooks/webhooks.module';
 
 @Module({
   imports: [
@@ -13,6 +14,7 @@ import { TransfersModule } from './modules/transfers/transfers.module';
     LedgerModule,
     UsersModule,
     TransfersModule,
+    WebhooksModule,
     ConfigModule.forRoot({
       envFilePath: '../.env',
       isGlobal: true,
