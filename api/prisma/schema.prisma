@@ -71,6 +71,7 @@ model Transfer {
   sender    User @relation("SentTransfers", fields: [senderId], references: [id])
   recipient User @relation("ReceivedTransfers", fields: [recipientId], references: [id])
   statusHistory TransferStatusHistory[]
+  providerEvents ProviderEvent[]
 
   @@map("transfers")
 }
@@ -87,4 +88,19 @@ model TransferStatusHistory {
   transfer Transfer @relation(fields: [transferId], references: [id])
 
   @@map("transfer_status_history")
+}
+
+model ProviderEvent {
+  id            String   @id @default(uuid()) @db.Uuid
+  transferId    String   @map("transfer_id") @db.Uuid
+  provider      String   @db.VarChar(50)    // "on_ramp", "off_ramp", etc.
+  eventType     String   @map("event_type") @db.VarChar(50)
+  rawStatus     String   @map("raw_status") @db.VarChar(100)
+  mappedStatus  String   @map("mapped_status") @db.VarChar(30)
+  rawPayload    Json     @map("raw_payload")
+  receivedAt    DateTime @default(now()) @map("received_at")
+
+  transfer Transfer @relation(fields: [transferId], references: [id])
+
+  @@map("provider_events")
 }
