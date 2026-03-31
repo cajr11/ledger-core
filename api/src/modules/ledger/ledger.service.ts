@@ -7,11 +7,15 @@ import {
 import { lookup } from 'dns/promises';
 import { AccountType, Ledger, TransferType } from 'src/types';
 import { AccountFlags, createClient, id, type Client } from 'tigerbeetle-node';
+import { PrismaService } from '../prisma/prisma.service';
+import { Decimal } from '@prisma/client/runtime/client';
 
 @Injectable()
 export class LedgerService implements OnModuleInit, OnModuleDestroy {
   private tbClient: Client;
   private readonly logger = new Logger(LedgerService.name, { timestamp: true });
+
+  constructor(private readonly prismaService: PrismaService) {}
 
   async onModuleInit() {
     const host = process.env.TB_HOST || 'localhost';
@@ -30,6 +34,8 @@ export class LedgerService implements OnModuleInit, OnModuleDestroy {
         `Cannot resolve TigerBeetle host "${host}" — is the container running?`,
       );
     }
+
+    await this.seedSystemAccounts();
   }
 
   async onModuleDestroy() {
@@ -137,6 +143,50 @@ export class LedgerService implements OnModuleInit, OnModuleDestroy {
       };
     } catch (error) {
       this.logger.error('FAILED GETTING BALANCE:', error);
+      throw error;
+    }
+  }
+
+  async seedSystemAccounts() {
+    try {
+      const allLedgers = Object.values(Ledger).filter(
+        (v) => typeof v === 'number',
+      ) as Ledger[];
+
+      const existing = await this.prismaService.systemAccount.findMany({
+        select: { currency: true },
+      });
+      const existingCurrencies = new Set(existing.map((a) => a.currency));
+
+      const missing = allLedgers.filter(
+        (ledger) => !existingCurrencies.has(Ledger[ledger]),
+      );
+
+      if (missing.length === 0) {
+        this.logger.log('[Seeding] All system accounts exist, skipping');
+        return;
+      }
+
+      const tbAccountIds = await this.createAccounts(
+        missing.map((ledger) => ({
+          ledger,
+          code: AccountType.FUNDING_SOURCE,
+        })),
+      );
+
+      await this.prismaService.systemAccount.createMany({
+        data: missing.map((ledger, i) => ({
+          tigerBeetleAccountId: new Decimal(tbAccountIds[i].toString()),
+          currency: Ledger[ledger],
+          accountType: AccountType[AccountType.FUNDING_SOURCE],
+        })),
+      });
+
+      this.logger.log(
+        `[Seeding] Created ${missing.length} funding source accounts: ${missing.map((l) => Ledger[l]).join(', ')}`,
+      );
+    } catch (error) {
+      this.logger.error(`[Seeding] failure creating accounts: ${error}`);
       throw error;
     }
   }
