@@ -34,14 +34,30 @@ export type AccountBalance = {
 };
 
 export enum TransferStatus {
-  INITIATED = 'INITIATED', // transfer created, waiting to start
-  COLLECTING = 'COLLECTING', // waiting for funds from sender
-  FUNDS_RECEIVED = 'FUNDS_RECEIVED', // provider confirmed funds arrived
-  CONVERTING = 'CONVERTING', // currency conversion in progress
-  SENDING = 'SENDING', // sending to destination
-  COMPLETED = 'COMPLETED', // done, funds delivered
-  FAILED = 'FAILED', // something went wrong
-  REFUNDING = 'REFUNDING', // refund in progress
-  REFUNDED = 'REFUNDED', // refund complete
-  CANCELLED = 'CANCELLED', // cancelled before processing
+  INITIATED = 'INITIATED',
+  COLLECTING = 'COLLECTING',
+  FUNDS_RECEIVED = 'FUNDS_RECEIVED',
+  CONVERTING = 'CONVERTING',
+  SENDING = 'SENDING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  REFUNDING = 'REFUNDING',
+  REFUNDED = 'REFUNDED',
+  CANCELLED = 'CANCELLED',
 }
+
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  [TransferStatus.INITIATED]: [TransferStatus.COLLECTING, TransferStatus.FAILED, TransferStatus.CANCELLED],
+  [TransferStatus.COLLECTING]: [TransferStatus.FUNDS_RECEIVED, TransferStatus.FAILED],
+  [TransferStatus.FUNDS_RECEIVED]: [TransferStatus.CONVERTING, TransferStatus.COMPLETED, TransferStatus.FAILED],
+  [TransferStatus.CONVERTING]: [TransferStatus.SENDING, TransferStatus.FAILED],
+  [TransferStatus.SENDING]: [TransferStatus.COMPLETED, TransferStatus.FAILED],
+  [TransferStatus.FAILED]: [TransferStatus.REFUNDING],
+  [TransferStatus.REFUNDING]: [TransferStatus.REFUNDED],
+};
+
+export function canTransition(from: string, to: string): boolean {
+  return VALID_TRANSITIONS[from]?.includes(to) ?? false;
+}
+
+export const FEE_RATE = 0.015; // 1.5% fee on transfers
