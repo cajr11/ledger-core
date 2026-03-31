@@ -9,7 +9,7 @@ import { LedgerService } from '../ledger/ledger.service';
 import { CreateTransferDto } from './dto/create-transfer.dto';
 import { FundAccountDto } from './dto/fund-account.dto';
 import { Decimal } from '@prisma/client/runtime/client';
-import { Ledger, TransferStatus, TransferType } from 'src/types';
+import { AccountType, Ledger, TransferStatus, TransferType } from 'src/types';
 import { UpdateTransferStatusDto } from './dto/update-transfer-status.dto';
 import { TransactionClient } from 'src/generated/prisma/internal/prismaNamespace';
 
@@ -72,7 +72,8 @@ export class TransfersService {
               senderId: dto.senderId,
               recipientId: dto.recipientId,
               amount: dto.amount,
-              currency: dto.senderCurrency,
+              senderCurrency: dto.senderCurrency,
+              recipientCurrency: dto.recipientCurrency,
             },
           });
 
@@ -91,7 +92,7 @@ export class TransfersService {
             debitAccountId: BigInt(sender.tigerBeetleAccountId.toFixed(0)),
             creditAccountId: BigInt(recipient.tigerBeetleAccountId.toFixed(0)),
             amount: BigInt(pgTransfer.amount.toFixed(0)), // store in smallest unit (centavos)
-            ledger: Ledger[pgTransfer.currency],
+            ledger: Ledger[pgTransfer.senderCurrency as keyof typeof Ledger],
             code: TransferType.TRANSFER,
           });
 
@@ -119,10 +120,12 @@ export class TransfersService {
 
   async fundAccount(dto: FundAccountDto) {
     try {
-      const fundingAccount =
-        await this.prismaService.systemAccount.findUnique({
-          where: { currency: dto.currency },
-        });
+      const fundingAccount = await this.prismaService.systemAccount.findFirst({
+        where: {
+          currency: dto.currency,
+          accountType: AccountType[AccountType.FUNDING_SOURCE],
+        },
+      });
 
       if (!fundingAccount) {
         throw new BadRequestException(
