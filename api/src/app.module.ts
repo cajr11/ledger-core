@@ -8,9 +8,11 @@ import { UsersModule } from './modules/users/users.module';
 import { TransfersModule } from './modules/transfers/transfers.module';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
 import { QuotesModule } from './modules/quotes/quotes.module';
+import { RedisModule } from './modules/redis/redis.module';
 
 @Module({
   imports: [
+    RedisModule,
     HealthModule,
     LedgerModule,
     UsersModule,
