@@ -36,7 +36,7 @@ export class CrossBorderTransferService {
   }) {
     try {
       const transfer = await this.prismaService.$transaction(async (tx) => {
-        // 1. Validate sender account exists
+        //  Validate sender account exists
         const senderAccount = await tx.userAccount.findFirst({
           where: {
             userId: dto.senderId,
@@ -50,7 +50,7 @@ export class CrossBorderTransferService {
           );
         }
 
-        // 2. Validate sender balance
+        // Validate sender balance
         const balance = await this.ledgerService.getAccountBalance(
           BigInt(senderAccount.tigerBeetleAccountId.toFixed(0)),
         );
@@ -59,16 +59,14 @@ export class CrossBorderTransferService {
           throw new BadRequestException('Insufficient balance');
         }
 
-        // 3. Get exchange rate
+        // Get exchange rate
         const { rate } = await this.paymentProvider.getExchangeRate(
           dto.senderCurrency,
           dto.recipientCurrency,
         );
-        const convertedAmount = new Decimal(dto.amount)
-          .mul(rate)
-          .toFixed(0);
+        const convertedAmount = new Decimal(dto.amount).mul(rate).toFixed(0);
 
-        // 4. Move funds from sender wallet to pool in TigerBeetle
+        // Move funds from sender wallet to pool in TigerBeetle
         const senderPool = await tx.systemAccount.findFirst({
           where: {
             currency: dto.senderCurrency,
@@ -90,7 +88,7 @@ export class CrossBorderTransferService {
           code: TransferType.TRANSFER,
         });
 
-        // 5. Create transfer record
+        // Create transfer record
         const pgTransfer = await tx.transfer.create({
           data: {
             idempotencyKey: dto.idempotencyKey,
@@ -119,14 +117,14 @@ export class CrossBorderTransferService {
         return pgTransfer;
       });
 
-      // 7. Initiate on-ramp with provider (outside transaction - async flow)
+      // Initiate on-ramp with provider (outside transaction - async flow)
       const providerResult = await this.paymentProvider.initiateOnRamp({
         amount: dto.amount,
         currency: dto.senderCurrency,
         referenceId: transfer.id,
       });
 
-      // 8. Store provider ref and update status to COLLECTING
+      // Store provider ref and update status to COLLECTING
       await this.prismaService.$transaction(async (tx) => {
         await tx.transfer.update({
           where: { id: transfer.id },
