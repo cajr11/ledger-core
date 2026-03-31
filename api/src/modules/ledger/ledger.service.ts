@@ -148,42 +148,53 @@ export class LedgerService implements OnModuleInit, OnModuleDestroy {
   }
 
   async seedSystemAccounts() {
+    const systemAccountTypes = [
+      AccountType.FUNDING_SOURCE,
+      AccountType.INTERNAL_POOL,
+      AccountType.FEE_COLLECTION,
+      AccountType.OFF_RAMP,
+    ];
+
     try {
       const allLedgers = Object.values(Ledger).filter(
         (v) => typeof v === 'number',
       ) as Ledger[];
 
       const existing = await this.prismaService.systemAccount.findMany({
-        select: { currency: true },
+        select: { currency: true, accountType: true },
       });
-      const existingCurrencies = new Set(existing.map((a) => a.currency));
-
-      const missing = allLedgers.filter(
-        (ledger) => !existingCurrencies.has(Ledger[ledger]),
+      const existingKeys = new Set(
+        existing.map((a) => `${a.currency}:${a.accountType}`),
       );
 
-      if (missing.length === 0) {
+      // Build list of all needed accounts, filter out existing ones
+      const needed: { ledger: Ledger; code: AccountType }[] = [];
+      for (const ledger of allLedgers) {
+        for (const accountType of systemAccountTypes) {
+          const key = `${Ledger[ledger]}:${AccountType[accountType]}`;
+          if (!existingKeys.has(key)) {
+            needed.push({ ledger, code: accountType });
+          }
+        }
+      }
+
+      if (needed.length === 0) {
         this.logger.log('[Seeding] All system accounts exist, skipping');
         return;
       }
 
-      const tbAccountIds = await this.createAccounts(
-        missing.map((ledger) => ({
-          ledger,
-          code: AccountType.FUNDING_SOURCE,
-        })),
-      );
+      const tbAccountIds = await this.createAccounts(needed);
 
       await this.prismaService.systemAccount.createMany({
-        data: missing.map((ledger, i) => ({
+        data: needed.map((acc, i) => ({
           tigerBeetleAccountId: new Decimal(tbAccountIds[i].toString()),
-          currency: Ledger[ledger],
-          accountType: AccountType[AccountType.FUNDING_SOURCE],
+          currency: Ledger[acc.ledger],
+          accountType: AccountType[acc.code],
         })),
       });
 
       this.logger.log(
-        `[Seeding] Created ${missing.length} funding source accounts: ${missing.map((l) => Ledger[l]).join(', ')}`,
+        `[Seeding] Created ${needed.length} system accounts`,
       );
     } catch (error) {
       this.logger.error(`[Seeding] failure creating accounts: ${error}`);
