@@ -9,11 +9,12 @@ import {
   PaymentProvider,
   PAYMENT_PROVIDER,
 } from '../providers/payment-provider-adapter.interface';
+import { RedisService } from '../redis/redis.service';
 import { FEE_RATE } from 'src/types';
 import { Decimal } from '@prisma/client/runtime/client';
 import { randomUUID } from 'crypto';
 
-interface Quote {
+export type Quote = {
   id: string;
   senderCurrency: string;
   recipientCurrency: string;
@@ -22,19 +23,20 @@ interface Quote {
   amountAfterFee: string;
   exchangeRate: string;
   convertedAmount: string;
-  expiresAt: Date;
-}
+  expiresAt: string;
+};
 
 const QUOTE_TTL_SECONDS = 30;
+const QUOTE_KEY_PREFIX = 'quote:';
 
 @Injectable()
 export class QuotesService {
   private readonly logger = new Logger(QuotesService.name);
-  private readonly quotes = new Map<string, Quote>();
 
   constructor(
     @Inject(PAYMENT_PROVIDER)
     private readonly paymentProvider: PaymentProvider,
+    private readonly redisService: RedisService,
   ) {}
 
   async createQuote(dto: {
@@ -61,38 +63,31 @@ export class QuotesService {
       amountAfterFee,
       exchangeRate: rate,
       convertedAmount,
-      expiresAt: new Date(Date.now() + QUOTE_TTL_SECONDS * 1000),
+      expiresAt: new Date(Date.now() + QUOTE_TTL_SECONDS * 1000).toISOString(),
     };
 
-    this.quotes.set(quote.id, quote);
-
-    // Auto-expire
-    setTimeout(() => {
-      this.quotes.delete(quote.id);
-      this.logger.log(`Quote ${quote.id} expired`);
-    }, QUOTE_TTL_SECONDS * 1000);
+    await this.redisService.set(
+      `${QUOTE_KEY_PREFIX}${quote.id}`,
+      JSON.stringify(quote),
+      QUOTE_TTL_SECONDS,
+    );
 
     return quote;
   }
 
-  getQuote(id: string): Quote {
-    const quote = this.quotes.get(id);
+  async getQuote(id: string): Promise<Quote> {
+    const data = await this.redisService.get(`${QUOTE_KEY_PREFIX}${id}`);
 
-    if (!quote) {
+    if (!data) {
       throw new NotFoundException(`Quote ${id} not found or expired`);
     }
 
-    if (new Date() > quote.expiresAt) {
-      this.quotes.delete(id);
-      throw new BadRequestException(`Quote ${id} has expired`);
-    }
-
-    return quote;
+    return JSON.parse(data);
   }
 
-  consumeQuote(id: string): Quote {
-    const quote = this.getQuote(id);
-    this.quotes.delete(id);
+  async consumeQuote(id: string): Promise<Quote> {
+    const quote = await this.getQuote(id);
+    await this.redisService.del(`${QUOTE_KEY_PREFIX}${id}`);
     return quote;
   }
 }
