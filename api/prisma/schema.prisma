@@ -69,6 +69,7 @@ model Transfer {
   amount            Decimal  @db.Decimal(20, 8)
   exchangeRate      Decimal? @map("exchange_rate") @db.Decimal(20, 8)
   convertedAmount   Decimal? @map("converted_amount") @db.Decimal(20, 8)
+  fee               Decimal? @db.Decimal(20, 8)
   providerRef       String?  @map("provider_ref") @db.VarChar(255)
   status            String   @default("INITIATED") @db.VarChar(30)
   failureReason     String?  @map("failure_reason")
