@@ -12,7 +12,8 @@ export enum AccountType {
   USER_WALLET = 1, // individual user's account (liability)
   INTERNAL_POOL = 2, // system pool for conversions (e.g., USDC pool, MXN pool) (liability)
   FEE_COLLECTION = 3, // where fees accumulate (income)
-  FUNDING_SOURCE = 4, // getting user's funds on to the platform (liability)
+  FUNDING_SOURCE = 4, // money entering the system (on-ramp)
+  OFF_RAMP = 5, // money exiting the system (off-ramp)
 }
 
 export enum TransferType {
