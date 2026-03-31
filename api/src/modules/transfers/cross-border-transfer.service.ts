@@ -10,7 +10,8 @@ import {
   PaymentProvider,
   PAYMENT_PROVIDER,
 } from '../providers/payment-provider-adapter.interface';
-import { AccountType, Ledger, TransferStatus, TransferType } from 'src/types';
+import { QuotesService } from '../quotes/quotes.service';
+import { AccountType, FEE_RATE, Ledger, TransferStatus, TransferType } from 'src/types';
 import { Decimal } from '@prisma/client/runtime/client';
 
 @Injectable()
@@ -24,6 +25,7 @@ export class CrossBorderTransferService {
     private readonly ledgerService: LedgerService,
     @Inject(PAYMENT_PROVIDER)
     private readonly paymentProvider: PaymentProvider,
+    private readonly quotesService: QuotesService,
   ) {}
 
   async createTransfer(dto: {
@@ -33,6 +35,7 @@ export class CrossBorderTransferService {
     recipientCurrency: string;
     amount: string;
     recipientDetails: Record<string, any>;
+    quoteId?: string;
   }) {
     try {
       const transfer = await this.prismaService.$transaction(async (tx) => {
@@ -59,14 +62,30 @@ export class CrossBorderTransferService {
           throw new BadRequestException('Insufficient balance');
         }
 
-        // Get exchange rate
-        const { rate } = await this.paymentProvider.getExchangeRate(
-          dto.senderCurrency,
-          dto.recipientCurrency,
-        );
-        const convertedAmount = new Decimal(dto.amount).mul(rate).toFixed(0);
+        // Get rate from quote (locked) or fetch a new one
+        let rate: string;
+        let feeAmount: string;
+        let amountAfterFee: string;
+        let convertedAmountAfterFee: string;
 
-        // Move funds from sender wallet to pool in TigerBeetle
+        if (dto.quoteId) {
+          const quote = this.quotesService.consumeQuote(dto.quoteId);
+          rate = quote.exchangeRate;
+          feeAmount = quote.fee;
+          amountAfterFee = quote.amountAfterFee;
+          convertedAmountAfterFee = quote.convertedAmount;
+        } else {
+          const result = await this.paymentProvider.getExchangeRate(
+            dto.senderCurrency,
+            dto.recipientCurrency,
+          );
+          rate = result.rate;
+          feeAmount = new Decimal(dto.amount).mul(FEE_RATE).toFixed(0);
+          amountAfterFee = new Decimal(dto.amount).sub(feeAmount).toFixed(0);
+          convertedAmountAfterFee = new Decimal(amountAfterFee).mul(rate).toFixed(0);
+        }
+
+        // Look up pool account
         const senderPool = await tx.systemAccount.findFirst({
           where: {
             currency: dto.senderCurrency,
@@ -80,12 +99,35 @@ export class CrossBorderTransferService {
           );
         }
 
+        // Move full amount from sender wallet to pool
         await this.ledgerService.createTransfer({
           debitAccountId: BigInt(senderAccount.tigerBeetleAccountId.toFixed(0)),
           creditAccountId: BigInt(senderPool.tigerBeetleAccountId.toFixed(0)),
           amount: BigInt(dto.amount),
           ledger: Ledger[dto.senderCurrency as keyof typeof Ledger],
           code: TransferType.TRANSFER,
+        });
+
+        // Deduct fee from pool to fee collection account
+        const feeAccount = await tx.systemAccount.findFirst({
+          where: {
+            currency: dto.senderCurrency,
+            accountType: AccountType[AccountType.FEE_COLLECTION],
+          },
+        });
+
+        if (!feeAccount) {
+          throw new BadRequestException(
+            `No fee account for ${dto.senderCurrency}`,
+          );
+        }
+
+        await this.ledgerService.createTransfer({
+          debitAccountId: BigInt(senderPool.tigerBeetleAccountId.toFixed(0)),
+          creditAccountId: BigInt(feeAccount.tigerBeetleAccountId.toFixed(0)),
+          amount: BigInt(feeAmount),
+          ledger: Ledger[dto.senderCurrency as keyof typeof Ledger],
+          code: TransferType.FEE,
         });
 
         // Create transfer record
@@ -99,7 +141,8 @@ export class CrossBorderTransferService {
             recipientCurrency: dto.recipientCurrency,
             amount: dto.amount,
             exchangeRate: rate,
-            convertedAmount,
+            convertedAmount: convertedAmountAfterFee,
+            fee: feeAmount,
             status: TransferStatus.INITIATED,
           },
         });

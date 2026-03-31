@@ -36,6 +36,7 @@ export class TransfersController {
       recipientCurrency: dto.recipientCurrency,
       amount: dto.amount,
       recipientDetails: dto.recipientDetails || {},
+      quoteId: dto.quoteId,
     });
   }
 

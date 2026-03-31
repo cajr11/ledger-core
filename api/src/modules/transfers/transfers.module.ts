@@ -5,9 +5,10 @@ import { TransfersController } from './transfers.controller';
 import { LedgerModule } from '../ledger/ledger.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { ProviderModule } from '../providers/provider.module';
+import { QuotesModule } from '../quotes/quotes.module';
 
 @Module({
-  imports: [LedgerModule, PrismaModule, ProviderModule.register()],
+  imports: [LedgerModule, PrismaModule, ProviderModule.register(), QuotesModule],
   providers: [TransfersService, CrossBorderTransferService],
   controllers: [TransfersController],
 })
