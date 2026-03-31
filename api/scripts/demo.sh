@@ -31,10 +31,10 @@ echo ""
 # 2. Fund Carlos with MXN
 echo "--- Funding accounts ---"
 curl -s -X POST "$API/transfers/fund" -H "Content-Type: application/json" \
-  -d "{\"userId\":\"$CARLOS_ID\",\"currency\":\"MXN\",\"amount\":\"500000\"}" | echo "Carlos funded: 500,000 MXN (centavos)"
+  -d "{\"userId\":\"$CARLOS_ID\",\"currency\":\"MXN\",\"amount\":\"500000\"}" | echo "Carlos funded: 5,000 MXN (500,000 centavos)"
 
 curl -s -X POST "$API/transfers/fund" -H "Content-Type: application/json" \
-  -d "{\"userId\":\"MARIA_ID\",\"currency\":\"MXN\",\"amount\":\"200000\"}" | echo "Maria funded:  200,000 MXN (centavos)"
+  -d "{\"userId\":\"$MARIA_ID\",\"currency\":\"MXN\",\"amount\":\"200000\"}" | echo "Maria funded:  2,000 MXN (200,000 centavos)"
 
 echo ""
 
