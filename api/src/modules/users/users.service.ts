@@ -37,19 +37,19 @@ export class UsersService {
             },
           });
 
-          const tbAccId = await this.ledgerService.createAccount({
+          const tbAccIds = await this.ledgerService.createAccounts([{
             ledger: convertCountryToLedger(user.country),
             code: AccountType.USER_WALLET,
-          });
+          }]);
 
-          if (!tbAccId) {
+          if (!tbAccIds.length) {
             throw new Error('Failed to create tiger beetle account');
           }
 
           const pgUserAcc = await tx.userAccount.create({
             data: {
               userId: user.id,
-              tigerBeetleAccountId: new Decimal(tbAccId.toString()),
+              tigerBeetleAccountId: new Decimal(tbAccIds[0].toString()),
               currency: convertCountryToCurrency(user.country),
               accountType: AccountType[AccountType.USER_WALLET],
             },

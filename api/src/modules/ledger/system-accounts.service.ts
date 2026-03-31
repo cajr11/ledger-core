@@ -28,18 +28,18 @@ export class SystemAccountsService {
         throw new Error(`Unsupported currency: ${currency}`);
       }
 
-      const tbAccId = await this.ledgerService.createAccount({
+      const tbAccIds = await this.ledgerService.createAccounts([{
         ledger,
         code: AccountType.FUNDING_SOURCE,
-      });
+      }]);
 
-      if (!tbAccId) {
+      if (!tbAccIds.length) {
         throw new Error('Failed to create TigerBeetle funding account');
       }
 
       const systemAccount = await this.prismaService.systemAccount.create({
         data: {
-          tigerBeetleAccountId: new Decimal(tbAccId.toString()),
+          tigerBeetleAccountId: new Decimal(tbAccIds[0].toString()),
           currency,
           accountType: AccountType[AccountType.FUNDING_SOURCE],
         },
@@ -66,8 +66,11 @@ export class SystemAccountsService {
   }
 
   async getFundingAccountByCurrency(currency: string) {
-    return await this.prismaService.systemAccount.findUnique({
-      where: { currency },
+    return await this.prismaService.systemAccount.findFirst({
+      where: {
+        currency,
+        accountType: AccountType[AccountType.FUNDING_SOURCE],
+      },
     });
   }
 }
