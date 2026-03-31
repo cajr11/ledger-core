@@ -36,11 +36,9 @@ export class LedgerService implements OnModuleInit, OnModuleDestroy {
     this.tbClient.destroy();
   }
 
-  async createAccount({ ledger, code }: { ledger: Ledger; code: AccountType }) {
-    const accountId = id(); // TigerBeetle time-based ID.
-
-    const account = {
-      id: accountId,
+  async createAccounts(dto: { ledger: Ledger; code: AccountType }[]) {
+    const accounts = dto.map((acc) => ({
+      id: id(),
       debits_pending: 0n,
       debits_posted: 0n,
       credits_pending: 0n,
@@ -49,24 +47,24 @@ export class LedgerService implements OnModuleInit, OnModuleDestroy {
       user_data_64: 0n,
       user_data_32: 0,
       reserved: 0,
-      ledger: ledger,
-      code: code,
+      ledger: acc.ledger,
+      code: acc.code,
       flags:
-        code === AccountType.USER_WALLET
+        acc.code === AccountType.USER_WALLET
           ? AccountFlags.debits_must_not_exceed_credits
           : 0,
       timestamp: 0n,
-    };
+    }));
 
     try {
-      const results = await this.tbClient.createAccounts([account]);
+      const results = await this.tbClient.createAccounts(accounts);
 
       if (results.length > 0)
         throw new Error(
           `Account creation failed with status code ${results[0].result}`,
         );
 
-      return accountId;
+      return accounts.map((acc) => acc.id);
     } catch (error) {
       this.logger.error('FAILED ACCOUNT CREATION:', error);
       throw error;
