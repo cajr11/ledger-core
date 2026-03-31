@@ -191,6 +191,13 @@ export class TransfersService {
     }
   }
 
+  async findAll() {
+    return this.prismaService.transfer.findMany({
+      include: { sender: true, recipient: true },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async getTransfer(id: string) {
     try {
       return await this.prismaService.transfer.findUniqueOrThrow({

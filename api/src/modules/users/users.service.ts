@@ -74,6 +74,13 @@ export class UsersService {
     }
   }
 
+  async findAll() {
+    return this.prismaService.user.findMany({
+      include: { accounts: true },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async findUser(id: string) {
     try {
       return await this.prismaService.user.findUniqueOrThrow({

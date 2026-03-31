@@ -13,6 +13,13 @@ export class TransfersController {
     private readonly crossBorderService: CrossBorderTransferService,
   ) {}
 
+  @Get()
+  @ApiOperation({ summary: 'Get all transfers' })
+  @ApiResponse({ status: 200, description: 'List of all transfers' })
+  findAll() {
+    return this.transfersService.findAll();
+  }
+
   @Post('create')
   @ApiOperation({ summary: 'Create a transfer. Routes to same-currency or cross-border based on currencies.' })
   @ApiResponse({ status: 201, description: 'Transfer created successfully' })

@@ -10,6 +10,13 @@ import { AccountBalance } from 'src/types';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  @Get()
+  @ApiOperation({ summary: 'Get all users' })
+  @ApiResponse({ status: 200, description: 'List of all users' })
+  findAll() {
+    return this.usersService.findAll();
+  }
+
   @Post()
   @ApiOperation({ summary: 'Create a new user with a wallet account' })
   @ApiResponse({ status: 201, description: 'User and wallet account created' })
