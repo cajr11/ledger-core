@@ -1,26 +1,69 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg-primary: #0F1117;
+  --bg-sidebar: #0A0A0A;
+  --bg-card: #141414;
+  --bg-card-alt: #1A1A1A;
+  --bg-input: #141414;
+  --bg-hover: #FFFFFF10;
+  --bg-table-header: #0A0A0A;
+
+  --border-primary: #262626;
+  --border-subtle: #FFFFFF08;
+  --border-input: #262626;
+
+  --text-primary: #FFFFFF;
+  --text-secondary: #6B7280;
+  --text-muted: #4B5563;
+
+  --accent-green: #4ADE80;
+  --accent-green-bg: #4ADE8015;
+  --accent-blue: #3B82F6;
+  --accent-blue-bg: #3B82F615;
+  --accent-red: #EF4444;
+  --accent-red-bg: #EF444415;
+  --accent-yellow: #EAB308;
+  --accent-yellow-bg: #EAB30815;
+  --accent-purple: #A855F7;
+  --accent-purple-bg: #A855F715;
+
+  --sidebar-width: 240px;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-sidebar: var(--bg-sidebar);
+  --color-bg-card: var(--bg-card);
+  --color-bg-card-alt: var(--bg-card-alt);
+  --color-bg-input: var(--bg-input);
+  --color-bg-hover: var(--bg-hover);
+  --color-bg-table-header: var(--bg-table-header);
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-border-primary: var(--border-primary);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-input: var(--border-input);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+
+  --color-accent-green: var(--accent-green);
+  --color-accent-green-bg: var(--accent-green-bg);
+  --color-accent-blue: var(--accent-blue);
+  --color-accent-blue-bg: var(--accent-blue-bg);
+  --color-accent-red: var(--accent-red);
+  --color-accent-red-bg: var(--accent-red-bg);
+  --color-accent-yellow: var(--accent-yellow);
+  --color-accent-yellow-bg: var(--accent-yellow-bg);
+  --color-accent-purple: var(--accent-purple);
+  --color-accent-purple-bg: var(--accent-purple-bg);
+
+  --font-sans: "Inter", system-ui, sans-serif;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
 }
