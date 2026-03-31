@@ -4,7 +4,7 @@ import {
   mapProviderStatus,
   mapToTransferStatus,
 } from '../providers/payment-provider-adapter.interface';
-import { TransferStatus } from 'src/types';
+import { canTransition, TransferStatus } from 'src/types';
 
 @Injectable()
 export class WebhooksService {
@@ -56,6 +56,14 @@ export class WebhooksService {
         `Status unchanged: ${newTransferStatus}, skipping update`,
       );
       return { received: true, matched: true, statusChanged: false };
+    }
+
+    // Validate transition
+    if (!canTransition(transfer.status, newTransferStatus)) {
+      this.logger.warn(
+        `Invalid transition: ${transfer.status} -> ${newTransferStatus}, rejecting`,
+      );
+      return { received: true, matched: true, statusChanged: false, invalidTransition: true };
     }
 
     // Update transfer status and record history
