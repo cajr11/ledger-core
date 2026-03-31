@@ -1,17 +1,22 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { LedgerService } from '../ledger/ledger.service';
+import { RedisService } from '../redis/redis.service';
 import { CreateTransferDto } from './dto/create-transfer.dto';
 import { FundAccountDto } from './dto/fund-account.dto';
 import { Decimal } from '@prisma/client/runtime/client';
 import { AccountType, Ledger, TransferStatus, TransferType } from 'src/types';
 import { UpdateTransferStatusDto } from './dto/update-transfer-status.dto';
 import { TransactionClient } from 'src/generated/prisma/internal/prismaNamespace';
+
+const IDEMPOTENCY_TTL_SECONDS = 86400; // 24 hours
+const IDEMPOTENCY_KEY_PREFIX = 'idempotency:';
 
 @Injectable()
 export class TransfersService {
@@ -22,10 +27,22 @@ export class TransfersService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly ledgerService: LedgerService,
+    private readonly redisService: RedisService,
   ) {}
 
   async createTransfer(dto: CreateTransferDto) {
     try {
+      // idempotency check Redis (before hitting DB)
+      const idempotencyKey = `${IDEMPOTENCY_KEY_PREFIX}${dto.idempotencyKey}`;
+      const existingTransferId = await this.redisService.get(idempotencyKey);
+
+      if (existingTransferId) {
+        const existing = await this.prismaService.transfer.findUnique({
+          where: { id: existingTransferId },
+        });
+        if (existing) return existing;
+      }
+
       // validate accounts exist
       const transfer = await this.prismaService.$transaction(async (tx) => {
         const sender = await tx.userAccount.findFirst({
@@ -110,6 +127,15 @@ export class TransfersService {
           return pgTransfer;
         }
       });
+
+      // store idempotency key and transfer ID in Redis
+      if (transfer) {
+        await this.redisService.set(
+          idempotencyKey,
+          transfer.id,
+          IDEMPOTENCY_TTL_SECONDS,
+        );
+      }
 
       return transfer;
     } catch (error) {

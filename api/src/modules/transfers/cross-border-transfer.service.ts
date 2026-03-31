@@ -6,13 +6,23 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { LedgerService } from '../ledger/ledger.service';
+import { RedisService } from '../redis/redis.service';
 import {
   PaymentProvider,
   PAYMENT_PROVIDER,
 } from '../providers/payment-provider-adapter.interface';
 import { QuotesService } from '../quotes/quotes.service';
-import { AccountType, FEE_RATE, Ledger, TransferStatus, TransferType } from 'src/types';
+import {
+  AccountType,
+  FEE_RATE,
+  Ledger,
+  TransferStatus,
+  TransferType,
+} from 'src/types';
 import { Decimal } from '@prisma/client/runtime/client';
+
+const IDEMPOTENCY_TTL_SECONDS = 86400;
+const IDEMPOTENCY_KEY_PREFIX = 'idempotency:';
 
 @Injectable()
 export class CrossBorderTransferService {
@@ -26,6 +36,7 @@ export class CrossBorderTransferService {
     @Inject(PAYMENT_PROVIDER)
     private readonly paymentProvider: PaymentProvider,
     private readonly quotesService: QuotesService,
+    private readonly redisService: RedisService,
   ) {}
 
   async createTransfer(dto: {
@@ -38,8 +49,19 @@ export class CrossBorderTransferService {
     quoteId?: string;
   }) {
     try {
+      // Redis idempotency check
+      const idempotencyKey = `${IDEMPOTENCY_KEY_PREFIX}${dto.idempotencyKey}`;
+      const existingTransferId = await this.redisService.get(idempotencyKey);
+
+      if (existingTransferId) {
+        const existing = await this.prismaService.transfer.findUnique({
+          where: { id: existingTransferId },
+        });
+        if (existing) return existing;
+      }
+
       const transfer = await this.prismaService.$transaction(async (tx) => {
-        //  Validate sender account exists
+        // Validate sender account exists
         const senderAccount = await tx.userAccount.findFirst({
           where: {
             userId: dto.senderId,
@@ -69,7 +91,7 @@ export class CrossBorderTransferService {
         let convertedAmountAfterFee: string;
 
         if (dto.quoteId) {
-          const quote = this.quotesService.consumeQuote(dto.quoteId);
+          const quote = await this.quotesService.consumeQuote(dto.quoteId);
           rate = quote.exchangeRate;
           feeAmount = quote.fee;
           amountAfterFee = quote.amountAfterFee;
@@ -82,7 +104,9 @@ export class CrossBorderTransferService {
           rate = result.rate;
           feeAmount = new Decimal(dto.amount).mul(FEE_RATE).toFixed(0);
           amountAfterFee = new Decimal(dto.amount).sub(feeAmount).toFixed(0);
-          convertedAmountAfterFee = new Decimal(amountAfterFee).mul(rate).toFixed(0);
+          convertedAmountAfterFee = new Decimal(amountAfterFee)
+            .mul(rate)
+            .toFixed(0);
         }
 
         // Look up pool account
@@ -147,7 +171,7 @@ export class CrossBorderTransferService {
           },
         });
 
-        // 6. Record initial status
+        //  Record initial status
         await tx.transferStatusHistory.create({
           data: {
             transferId: pgTransfer.id,
@@ -186,6 +210,13 @@ export class CrossBorderTransferService {
           },
         });
       });
+
+      // Store idempotency key -> transfer ID in Redis
+      await this.redisService.set(
+        idempotencyKey,
+        transfer.id,
+        IDEMPOTENCY_TTL_SECONDS,
+      );
 
       this.logger.log(
         `Cross-border transfer ${transfer.id} initiated: ${dto.amount} ${dto.senderCurrency} -> ${dto.recipientCurrency}`,
