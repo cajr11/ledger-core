@@ -7,6 +7,7 @@ import { ConfigModule } from '@nestjs/config';
 import { UsersModule } from './modules/users/users.module';
 import { TransfersModule } from './modules/transfers/transfers.module';
 import { WebhooksModule } from './modules/webhooks/webhooks.module';
+import { QuotesModule } from './modules/quotes/quotes.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { WebhooksModule } from './modules/webhooks/webhooks.module';
     UsersModule,
     TransfersModule,
     WebhooksModule,
+    QuotesModule,
     ConfigModule.forRoot({
       envFilePath: '../.env',
       isGlobal: true,
