@@ -58,19 +58,25 @@ model SystemAccount {
 }
 
 model Transfer {
-  id              String   @id @default(uuid()) @db.Uuid
-  idempotencyKey  String   @unique @map("idempotency_key") @db.VarChar(255)
-  senderId        String   @map("sender_id") @db.Uuid
-  recipientId     String   @map("recipient_id") @db.Uuid
-  currency        String   @db.VarChar(4)
-  amount          Decimal  @db.Decimal(20, 8)
-  status          String   @default("INITIATED") @db.VarChar(30)
-  failureReason   String?  @map("failure_reason")
-  createdAt       DateTime @default(now()) @map("created_at")
-  updatedAt       DateTime @updatedAt @map("updated_at")
+  id                String   @id @default(uuid()) @db.Uuid
+  idempotencyKey    String   @unique @map("idempotency_key") @db.VarChar(255)
+  type              String   @default("SAME_CURRENCY") @db.VarChar(20)
+  senderId          String   @map("sender_id") @db.Uuid
+  recipientId       String?  @map("recipient_id") @db.Uuid
+  recipientDetails  Json?    @map("recipient_details")
+  senderCurrency    String   @map("sender_currency") @db.VarChar(4)
+  recipientCurrency String   @map("recipient_currency") @db.VarChar(4)
+  amount            Decimal  @db.Decimal(20, 8)
+  exchangeRate      Decimal? @map("exchange_rate") @db.Decimal(20, 8)
+  convertedAmount   Decimal? @map("converted_amount") @db.Decimal(20, 8)
+  providerRef       String?  @map("provider_ref") @db.VarChar(255)
+  status            String   @default("INITIATED") @db.VarChar(30)
+  failureReason     String?  @map("failure_reason")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
   sender    User @relation("SentTransfers", fields: [senderId], references: [id])
-  recipient User @relation("ReceivedTransfers", fields: [recipientId], references: [id])
+  recipient User? @relation("ReceivedTransfers", fields: [recipientId], references: [id])
   statusHistory TransferStatusHistory[]
   providerEvents ProviderEvent[]
 
