@@ -1,5 +1,3 @@
-// ── Enums ──
-
 export enum Ledger {
   USD = 1,
   USDC = 2,
@@ -40,8 +38,6 @@ export enum TransferStatus {
   CANCELLED = 'CANCELLED',
 }
 
-// ── Constants ──
-
 export const FEE_RATE = 0.015;
 
 export const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -57,8 +53,6 @@ export const VALID_TRANSITIONS: Record<string, string[]> = {
 export function canTransition(from: string, to: string): boolean {
   return VALID_TRANSITIONS[from]?.includes(to) ?? false;
 }
-
-// ── Types ──
 
 export type AccountBalance = {
   creditsPosted: string;
