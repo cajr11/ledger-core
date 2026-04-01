@@ -22,7 +22,7 @@ export default function Sidebar() {
   return (
     <aside className="flex flex-col w-60 min-h-screen bg-bg-sidebar p-4 pt-6 gap-8">
       <div className="flex items-center gap-2.5">
-        <div className="w-8 h-8 rounded-lg bg-[#2A2D3E]" />
+        <img src="/wallet.png" alt="Ledger Core" className="w-8 h-8 rounded-lg" />
         <span className="text-lg font-bold text-text-primary">Ledger Core</span>
       </div>
 

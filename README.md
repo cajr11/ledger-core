@@ -4,14 +4,14 @@ Multi-currency payment ledger with double-entry accounting, workflow orchestrati
 
 Built with [NestJS](https://nestjs.com), [TigerBeetle](https://tigerbeetle.com), [PostgreSQL](https://www.postgresql.org), [Redis](https://redis.io), and [Temporal](https://temporal.io).
 
-![Dashboard](docs/screenshots/dashboard.png)
+![Transfer Details](docs/screenshots/transfer-refunded.png)
 
 <details>
 <summary>More screenshots</summary>
 
 <br>
 
-![Transfer Refunded](docs/screenshots/transfer-refunded.png)
+![Dashboard](docs/screenshots/dashboard.png)
 
 ![Temporal Workflow](docs/screenshots/temporal.png)
 

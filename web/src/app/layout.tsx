@@ -10,6 +10,9 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Ledger Core",
   description: "Financial ledger dashboard for Lazer Cash",
+  icons: {
+    icon: "/wallet.png",
+  },
 };
 
 export default function RootLayout({
