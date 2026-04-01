@@ -7,7 +7,6 @@ import {
   Wallet,
   ArrowLeftRight,
   Server,
-  Activity,
 } from "lucide-react";
 
 const navItems = [
@@ -15,7 +14,6 @@ const navItems = [
   { href: "/accounts", label: "Accounts", icon: Wallet },
   { href: "/transfers", label: "Transfers", icon: ArrowLeftRight },
   { href: "/system-accounts", label: "System Accounts", icon: Server },
-  { href: "/activity", label: "Activity", icon: Activity },
 ];
 
 export default function Sidebar() {
