@@ -11,6 +11,8 @@ import {
   ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
+import { formatAmount } from "@/lib/format";
+import TransferFlow from "@/components/transfer-flow";
 
 function timeAgo(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -20,11 +22,6 @@ function timeAgo(dateStr: string) {
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs}h ago`;
   return `${Math.floor(hrs / 24)}d ago`;
-}
-
-function formatAmount(amount: string, currency: string) {
-  const num = Number(amount);
-  return `$${num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
 }
 
 export default function OverviewPage() {
@@ -94,6 +91,9 @@ export default function OverviewPage() {
           </div>
         </div>
       </div>
+
+      {/* Transfer Flow Visualizer */}
+      <TransferFlow transfer={transfers[0] ?? null} />
 
       {/* Recent Activity */}
       <div className="flex flex-col flex-1 bg-bg-card border border-border-primary rounded-xl overflow-hidden">

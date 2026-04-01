@@ -62,7 +62,20 @@ export class SystemAccountsService {
   }
 
   async getFundingAccounts() {
-    return await this.prismaService.systemAccount.findMany();
+    const accounts = await this.prismaService.systemAccount.findMany();
+    const withBalances = await Promise.all(
+      accounts.map(async (acc) => {
+        try {
+          const balance = await this.ledgerService.getAccountBalance(
+            BigInt(acc.tigerBeetleAccountId.toFixed(0)),
+          );
+          return { ...acc, balance };
+        } catch {
+          return { ...acc, balance: null };
+        }
+      }),
+    );
+    return withBalances;
   }
 
   async getFundingAccountByCurrency(currency: string) {
