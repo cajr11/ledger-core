@@ -6,9 +6,10 @@ import { LedgerModule } from '../ledger/ledger.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { ProviderModule } from '../providers/provider.module';
 import { QuotesModule } from '../quotes/quotes.module';
+import { TemporalModule } from '../temporal/temporal.module';
 
 @Module({
-  imports: [LedgerModule, PrismaModule, ProviderModule.register(), QuotesModule],
+  imports: [LedgerModule, PrismaModule, ProviderModule.register(), QuotesModule, TemporalModule],
   providers: [TransfersService, CrossBorderTransferService],
   controllers: [TransfersController],
 })
