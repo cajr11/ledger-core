@@ -202,6 +202,12 @@ export class TransfersService {
     try {
       return await this.prismaService.transfer.findUniqueOrThrow({
         where: { id },
+        include: {
+          sender: true,
+          recipient: true,
+          statusHistory: { orderBy: { createdAt: 'asc' } },
+          providerEvents: { orderBy: { receivedAt: 'desc' } },
+        },
       });
     } catch {
       throw new NotFoundException(`Transfer with id ${id} not found`);
