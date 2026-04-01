@@ -1,4 +1,4 @@
-FROM node:20.20-alpine
+FROM node:20.20-slim
 WORKDIR /usr/local/ledger-core
 
 RUN npm install -g pnpm@10.22.0
