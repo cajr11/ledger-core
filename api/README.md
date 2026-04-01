@@ -65,6 +65,7 @@ This creates test users, funds accounts, runs same-currency and cross-border tra
 
 | Method | Route                  | Description                          |
 | ------ | ---------------------- | ------------------------------------ |
+| GET    | /users                 | Get all users                        |
 | POST   | /users                 | Create a user + wallet account       |
 | GET    | /users/:id             | Get user by ID                       |
 | GET    | /users/:id/accounts    | Get all accounts for a user          |
@@ -74,6 +75,7 @@ This creates test users, funds accounts, runs same-currency and cross-border tra
 
 | Method | Route                  | Description                          |
 | ------ | ---------------------- | ------------------------------------ |
+| GET    | /transfers             | Get all transfers                    |
 | POST   | /transfers/create      | Create a transfer (same-currency or cross-border) |
 | POST   | /transfers/fund        | Fund a user wallet from system funding account |
 | GET    | /transfers/:id         | Get transfer by ID                   |
