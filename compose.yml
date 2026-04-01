@@ -1,25 +1,33 @@
 services:
-  web:
-    container_name: ledger-core-web
-    build:
-      context: ./web
-    depends_on:
-      api:
-        condition: service_healthy
-    env_file:
-      - .env
-    environment:
-      API_ENDPOINT: ${API_ENDPOINT}
-    ports:
-      - 3001:3001
-    volumes:
-      - ./web:/usr/local/ledger-core/web
-      - /usr/local/ledger-core/web/node_modules
+  # Web dev server runs locally (pnpm dev) — too memory-hungry for Docker
+  # web:
+  #   container_name: ledger-core-web
+  #   build:
+  #     context: .
+  #     dockerfile: web/Dockerfile
+  #   depends_on:
+  #     api:
+  #       condition: service_healthy
+  #   env_file:
+  #     - .env
+  #   environment:
+  #     NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+  #   ports:
+  #     - 3001:3001
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 2g
+  #   volumes:
+  #     - ./web:/usr/local/ledger-core/web
+  #     - ./packages/shared:/usr/local/ledger-core/packages/shared
+  #     - /usr/local/ledger-core/web/node_modules
 
   api:
     container_name: ledger-core-api
     build:
-      context: ./api
+      context: .
+      dockerfile: api/Dockerfile
     depends_on:
       db:
         condition: service_healthy
@@ -42,6 +50,8 @@ services:
       - "3000:3000"
     volumes:
       - ./api:/usr/local/ledger-core/api
+      - ./packages/shared:/usr/local/ledger-core/packages/shared
+      - /usr/local/ledger-core/api/node_modules
     healthcheck:
       # wget makes an HTTP request (like curl but available in alpine by default)
       # --spider checks if the URL exists, don't download anything
