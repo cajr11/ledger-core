@@ -4,6 +4,20 @@ Multi-currency payment ledger with double-entry accounting, workflow orchestrati
 
 Built with [NestJS](https://nestjs.com), [TigerBeetle](https://tigerbeetle.com), [PostgreSQL](https://www.postgresql.org), [Redis](https://redis.io), and [Temporal](https://temporal.io).
 
+## Screenshots
+
+![Dashboard](docs/screenshots/dashboard.png)
+*Dashboard with transfer flow visualizer, stats, and system accounts*
+
+![Transfer Refunded](docs/screenshots/transfer-refunded.png)
+*Cross-border transfer with full compensation path: INITIATED through REFUNDED*
+
+![Temporal Workflow](docs/screenshots/temporal.png)
+*Temporal UI showing workflow execution, activities, and webhook signals*
+
+![Swagger](docs/screenshots/swagger.png)
+*API documentation via Swagger*
+
 ## What This Is
 
 A backend system for processing financial transfers. Handles same-currency and cross-border payments with exchange rates, fee collection, status tracking, and failure recovery.
