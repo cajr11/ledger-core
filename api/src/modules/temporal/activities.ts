@@ -1,8 +1,6 @@
 import { PrismaService } from '../prisma/prisma.service';
 import { LedgerService } from '../ledger/ledger.service';
-import {
-  PaymentProvider,
-} from '../providers/payment-provider-adapter.interface';
+import { PaymentProvider } from '../providers/payment-provider-adapter.interface';
 import {
   AccountType,
   FEE_RATE,
@@ -144,6 +142,57 @@ export function createActivities(
             failureReason: params.reason,
           },
         });
+      });
+    },
+
+    // Compensation, reverse the fee collection
+    async reverseFee(input: CrossBorderInput): Promise<void> {
+      const feeAccount = await prisma.systemAccount.findFirst({
+        where: {
+          currency: input.senderCurrency,
+          accountType: AccountType[AccountType.FEE_COLLECTION],
+        },
+      });
+
+      const pool = await prisma.systemAccount.findFirst({
+        where: {
+          currency: input.senderCurrency,
+          accountType: AccountType[AccountType.INTERNAL_POOL],
+        },
+      });
+
+      if (!feeAccount || !pool) return;
+
+      await ledger.createTransfer({
+        debitAccountId: BigInt(feeAccount.tigerBeetleAccountId.toFixed(0)),
+        creditAccountId: BigInt(pool.tigerBeetleAccountId.toFixed(0)),
+        amount: BigInt(input.fee),
+        ledger: Ledger[input.senderCurrency as keyof typeof Ledger],
+        code: TransferType.REFUND,
+      });
+    },
+
+    // Compensation: reverse the pool debit back to sender
+    async refundSenderFromPool(input: CrossBorderInput): Promise<void> {
+      const senderAccount = await prisma.userAccount.findFirst({
+        where: { userId: input.senderId, currency: input.senderCurrency },
+      });
+
+      const pool = await prisma.systemAccount.findFirst({
+        where: {
+          currency: input.senderCurrency,
+          accountType: AccountType[AccountType.INTERNAL_POOL],
+        },
+      });
+
+      if (!senderAccount || !pool) return;
+
+      await ledger.createTransfer({
+        debitAccountId: BigInt(pool.tigerBeetleAccountId.toFixed(0)),
+        creditAccountId: BigInt(senderAccount.tigerBeetleAccountId.toFixed(0)),
+        amount: BigInt(input.amount),
+        ledger: Ledger[input.senderCurrency as keyof typeof Ledger],
+        code: TransferType.REFUND,
       });
     },
   };
