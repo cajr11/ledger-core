@@ -14,6 +14,8 @@ const {
   initiateOnRamp,
   updateTransferStatus,
   markTransferFailed,
+  reverseFee,
+  refundSenderFromPool,
 } = proxyActivities<Activities>({
   startToCloseTimeout: '30 seconds',
   retry: { maximumAttempts: 3 },
@@ -26,6 +28,7 @@ export async function crossBorderTransferWorkflow(
   input: CrossBorderInput,
 ): Promise<void> {
   let providerStatus: string | null = null;
+  let currentStatus = TransferStatus.INITIATED;
 
   // Listen for webhook signals
   setHandler(providerStatusSignal, (status: string) => {
@@ -33,24 +36,25 @@ export async function crossBorderTransferWorkflow(
   });
 
   try {
-    //  Debit sender and move to pool
+    // Debit sender and move to pool
     await debitSenderToPool(input);
 
-    //  Collect fee
+    // Collect fee
     await collectFee(input);
 
     // Update status to COLLECTING
     await updateTransferStatus({
       transferId: input.transferId,
-      fromStatus: TransferStatus.INITIATED,
+      fromStatus: currentStatus,
       toStatus: TransferStatus.COLLECTING,
       changedBy: 'workflow',
     });
+    currentStatus = TransferStatus.COLLECTING;
 
-    //  Initiate on-ramp with provider
+    // Initiate on-ramp with provider
     await initiateOnRamp(input);
 
-    //Wait for provider webhook (funds_received or failure)
+    // Wait for provider webhook
     await condition(() => providerStatus !== null, '10 minutes');
 
     if (!providerStatus) {
@@ -65,10 +69,11 @@ export async function crossBorderTransferWorkflow(
     ) {
       await updateTransferStatus({
         transferId: input.transferId,
-        fromStatus: TransferStatus.COLLECTING,
+        fromStatus: currentStatus,
         toStatus: TransferStatus.FUNDS_RECEIVED,
         changedBy: 'workflow',
       });
+      currentStatus = TransferStatus.FUNDS_RECEIVED;
     } else {
       throw ApplicationFailure.nonRetryable(
         `Provider returned: ${providerStatus}`,
@@ -78,21 +83,23 @@ export async function crossBorderTransferWorkflow(
     // Reset for next signal
     providerStatus = null;
 
-    //  Update to CONVERTING (conversion happens via provider)
+    // Update to CONVERTING
     await updateTransferStatus({
       transferId: input.transferId,
-      fromStatus: TransferStatus.FUNDS_RECEIVED,
+      fromStatus: currentStatus,
       toStatus: TransferStatus.CONVERTING,
       changedBy: 'workflow',
     });
+    currentStatus = TransferStatus.CONVERTING;
 
     // Update to SENDING
     await updateTransferStatus({
       transferId: input.transferId,
-      fromStatus: TransferStatus.CONVERTING,
+      fromStatus: currentStatus,
       toStatus: TransferStatus.SENDING,
       changedBy: 'workflow',
     });
+    currentStatus = TransferStatus.SENDING;
 
     // Wait for final provider confirmation
     await condition(() => providerStatus !== null, '10 minutes');
@@ -106,7 +113,7 @@ export async function crossBorderTransferWorkflow(
     if (providerStatus === 'payment_processed') {
       await updateTransferStatus({
         transferId: input.transferId,
-        fromStatus: TransferStatus.SENDING,
+        fromStatus: currentStatus,
         toStatus: TransferStatus.COMPLETED,
         changedBy: 'workflow',
       });
@@ -116,13 +123,31 @@ export async function crossBorderTransferWorkflow(
       );
     }
   } catch (error) {
-    //  mark transfer as failed
-    const currentTransfer = input;
+    const reason = error instanceof Error ? error.message : 'Unknown error';
+
+    // mark as failed from whatever state we're in
     await markTransferFailed({
-      transferId: currentTransfer.transferId,
-      currentStatus: TransferStatus.INITIATED,
-      reason: error instanceof Error ? error.message : 'Unknown error',
+      transferId: input.transferId,
+      currentStatus,
+      reason,
     });
-    throw error;
+
+    await updateTransferStatus({
+      transferId: input.transferId,
+      fromStatus: TransferStatus.FAILED,
+      toStatus: TransferStatus.REFUNDING,
+      changedBy: 'workflow:compensation',
+    });
+
+    // reverse the money movement in TigerBeetle
+    await reverseFee(input);
+    await refundSenderFromPool(input);
+
+    await updateTransferStatus({
+      transferId: input.transferId,
+      fromStatus: TransferStatus.REFUNDING,
+      toStatus: TransferStatus.REFUNDED,
+      changedBy: 'workflow:compensation',
+    });
   }
 }
