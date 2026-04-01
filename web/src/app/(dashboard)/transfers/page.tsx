@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { getTransfers, type Transfer } from "@/lib/api";
 import StatusBadge from "@/components/status-badge";
+import NewTransferModal from "@/components/new-transfer-modal";
 import { Plus, Search } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { formatAmount } from "@/lib/format";
 
 const tabs = ["All", "Completed", "Processing", "Failed"] as const;
 type Tab = (typeof tabs)[number];
@@ -27,17 +30,20 @@ function timeAgo(dateStr: string) {
 }
 
 export default function TransfersPage() {
+  const router = useRouter();
   const [transfers, setTransfers] = useState<Transfer[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>("All");
   const [search, setSearch] = useState("");
+  const [showCreate, setShowCreate] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     getTransfers()
       .then(setTransfers)
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, []);
+  }, [refreshKey]);
 
   const filtered = transfers
     .filter(tabFilter[activeTab])
@@ -71,7 +77,10 @@ export default function TransfersPage() {
               className="bg-transparent text-sm text-text-primary placeholder:text-text-muted outline-none w-40"
             />
           </div>
-          <button className="flex items-center gap-2 bg-white text-black px-4 py-2.5 rounded-md text-sm font-medium hover:bg-gray-100 transition-colors">
+          <button
+            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-2 bg-white text-black px-4 py-2.5 rounded-md text-sm font-medium hover:bg-gray-100 transition-colors"
+          >
             <Plus size={16} />
             New Transfer
           </button>
@@ -135,7 +144,8 @@ export default function TransfersPage() {
           filtered.map((transfer, i) => (
             <div
               key={transfer.id}
-              className={`flex items-center px-5 py-3.5 hover:bg-bg-hover transition-colors ${
+              onClick={() => router.push(`/transfers/${transfer.id}`)}
+              className={`flex items-center px-5 py-3.5 hover:bg-bg-hover transition-colors cursor-pointer ${
                 i < filtered.length - 1
                   ? "border-b border-border-subtle"
                   : ""
@@ -154,7 +164,7 @@ export default function TransfersPage() {
                   "External"}
               </div>
               <div className="w-[140px] text-sm font-medium text-accent-green">
-                ${Number(transfer.amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                {formatAmount(transfer.amount)}
               </div>
               <div className="w-[80px] text-sm text-text-secondary">
                 {transfer.senderCurrency}
@@ -169,6 +179,11 @@ export default function TransfersPage() {
           ))
         )}
       </div>
+      <NewTransferModal
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        onCreated={() => setRefreshKey((k) => k + 1)}
+      />
     </div>
   );
 }

@@ -9,7 +9,10 @@ import {
   type AccountBalance,
 } from "@/lib/api";
 import StatusBadge from "@/components/status-badge";
-import { Plus, Search } from "lucide-react";
+import CreateUserModal from "@/components/create-user-modal";
+import FundAccountModal from "@/components/fund-account-modal";
+import { Plus, Search, Wallet } from "lucide-react";
+import { formatAmount } from "@/lib/format";
 
 type UserWithBalance = User & {
   currency: string;
@@ -38,6 +41,9 @@ export default function AccountsPage() {
   const [users, setUsers] = useState<UserWithBalance[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+  const [showFund, setShowFund] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     async function load() {
@@ -87,7 +93,7 @@ export default function AccountsPage() {
       }
     }
     load();
-  }, []);
+  }, [refreshKey]);
 
   const filtered = users.filter(
     (u) =>
@@ -116,7 +122,17 @@ export default function AccountsPage() {
               className="bg-transparent text-sm text-text-primary placeholder:text-text-muted outline-none w-40"
             />
           </div>
-          <button className="flex items-center gap-2 bg-white text-black px-4 py-2.5 rounded-md text-sm font-medium hover:bg-gray-100 transition-colors">
+          <button
+            onClick={() => setShowFund(true)}
+            className="flex items-center gap-2 bg-bg-card border border-border-primary text-text-primary px-4 py-2.5 rounded-md text-sm font-medium hover:bg-bg-hover transition-colors"
+          >
+            <Wallet size={16} />
+            Fund Account
+          </button>
+          <button
+            onClick={() => setShowCreate(true)}
+            className="flex items-center gap-2 bg-white text-black px-4 py-2.5 rounded-md text-sm font-medium hover:bg-gray-100 transition-colors"
+          >
             <Plus size={16} />
             Create User
           </button>
@@ -186,7 +202,7 @@ export default function AccountsPage() {
                 {user.currency}
               </div>
               <div className="w-[140px] text-sm font-medium text-accent-green">
-                ${Number(user.balance).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                {formatAmount(user.balance)}
               </div>
               <div className="w-[100px]">
                 <StatusBadge status={user.kycStatus} />
@@ -195,6 +211,17 @@ export default function AccountsPage() {
           ))
         )}
       </div>
+      <CreateUserModal
+        open={showCreate}
+        onClose={() => setShowCreate(false)}
+        onCreated={() => setRefreshKey((k) => k + 1)}
+      />
+      <FundAccountModal
+        open={showFund}
+        onClose={() => setShowFund(false)}
+        onFunded={() => setRefreshKey((k) => k + 1)}
+        users={users}
+      />
     </div>
   );
 }
