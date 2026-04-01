@@ -3,13 +3,7 @@
 import { useEffect, useState } from "react";
 import { getTransfers, getUsers, type Transfer, type User } from "@/lib/api";
 import StatusBadge from "@/components/status-badge";
-import {
-  ArrowLeftRight,
-  Banknote,
-  Plus,
-  UserPlus,
-  ArrowRight,
-} from "lucide-react";
+import { Plus, ArrowRight, ArrowLeftRight } from "lucide-react";
 import Link from "next/link";
 import { formatAmount } from "@/lib/format";
 import TransferFlow from "@/components/transfer-flow";
@@ -60,35 +54,20 @@ export default function OverviewPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-3 gap-5">
-        <div className="flex items-center gap-4 bg-bg-card border border-border-primary rounded-xl p-5">
-          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-accent-blue-bg">
-            <ArrowLeftRight size={20} className="text-accent-blue" />
-          </div>
-          <div>
-            <p className="text-sm text-text-secondary">Total Transfers</p>
-            <p className="text-2xl font-bold">{transfers.length}</p>
-          </div>
+      <div className="grid grid-cols-3 gap-4">
+        <div className="bg-bg-card border border-border-primary rounded-xl p-5">
+          <p className="text-sm text-text-secondary mb-1">Total Transfers</p>
+          <p className="text-2xl font-bold">{transfers.length}</p>
         </div>
-        <div className="flex items-center gap-4 bg-bg-card border border-border-primary rounded-xl p-5">
-          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-accent-green-bg">
-            <Banknote size={20} className="text-accent-green" />
-          </div>
-          <div>
-            <p className="text-sm text-text-secondary">Completed</p>
-            <p className="text-2xl font-bold">
-              {transfers.filter((t) => t.status === "COMPLETED").length}
-            </p>
-          </div>
+        <div className="bg-bg-card border border-border-primary rounded-xl p-5">
+          <p className="text-sm text-text-secondary mb-1">Completed</p>
+          <p className="text-2xl font-bold">
+            {transfers.filter((t) => t.status === "COMPLETED").length}
+          </p>
         </div>
-        <div className="flex items-center gap-4 bg-bg-card border border-border-primary rounded-xl p-5">
-          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-accent-purple-bg">
-            <UserPlus size={20} className="text-accent-purple" />
-          </div>
-          <div>
-            <p className="text-sm text-text-secondary">Users</p>
-            <p className="text-2xl font-bold">{users.length}</p>
-          </div>
+        <div className="bg-bg-card border border-border-primary rounded-xl p-5">
+          <p className="text-sm text-text-secondary mb-1">Users</p>
+          <p className="text-2xl font-bold">{users.length}</p>
         </div>
       </div>
 
