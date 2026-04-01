@@ -35,6 +35,8 @@ services:
         condition: service_healthy
       tigerbeetle:
         condition: service_healthy
+      temporal:
+        condition: service_healthy
     env_file:
       - .env
     # The TigerBeetle Node.js client uses io_uring internally for communication with the server
@@ -150,6 +152,41 @@ services:
       timeout: 3s
       retries: 5
       start_period: 5s
+
+  temporal:
+    container_name: ledger-core-temporal
+    image: temporalio/auto-setup:1.27.2
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB: postgresql
+      DB_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PWD: ${POSTGRES_PASSWORD}
+      POSTGRES_SEEDS: db
+      DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/development-sql.yaml
+    ports:
+      - "7233:7233"
+    volumes:
+      - ./temporal/dynamicconfig:/etc/temporal/config/dynamicconfig
+    healthcheck:
+      test: ["CMD", "tctl", "cluster", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  temporal-ui:
+    container_name: ledger-core-temporal-ui
+    image: temporalio/ui:2.36.2
+    depends_on:
+      temporal:
+        condition: service_healthy
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+    ports:
+      - "8080:8080"
 
 volumes:
   ledger-core-db-data:
